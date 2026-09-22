@@ -1,30 +1,39 @@
-
-
 using System.Text.Json.Serialization;
 
 namespace ApiOzon
 {
     public class OzonStocksResponse
     {
-        public List<Products>? Present { get; set; }
+        // Указываем точное имя из JSON и меняем тип на правильный список
+        [JsonPropertyName("products")]
+        public List<Products>? Products { get; set; }
 
-        public bool HasNext {get; set;}
+        [JsonPropertyName("has_next")]
+        public bool HasNext { get; set; }
 
-        public string Cursor {get; set;} = string.Empty;
+        [JsonPropertyName("cursor")]
+        public string Cursor { get; set; } = string.Empty;
     }
 
     public class Products
     {
-        public int Sku {get; set;}
-        public string VendorCode {get; set;} = string.Empty;
+        // Используем long, так как ID Ozon не влезают в стандартный int
+        [JsonPropertyName("sku")]
+        public long Sku { get; set; }
 
-        public int ProductId {get; set;}
-        
-        public int WarehouseId {get; set;}
+        [JsonPropertyName("offer_id")]
+        public string OfferId { get; set; } = string.Empty;
 
-        public int Present {get; set;}
+        [JsonPropertyName("product_id")]
+        public long ProductId { get; set; }
 
-        public int Reserved {get; set;}
+        [JsonPropertyName("warehouse_id")]
+        public long WarehouseId { get; set; }
 
+        [JsonPropertyName("present")]
+        public int Present { get; set; }
+
+        [JsonPropertyName("reserved")]
+        public int Reserved { get; set; }
     }
 }
