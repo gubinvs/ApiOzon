@@ -35,16 +35,18 @@ namespace ApiOzon
             // Проверка пароля GUID
             if (_password.Password == password)
             {
-                try
-                    {
+                try {
                         // Загружаем данные из таблицы товаров
                         var product = _db.GoodsTable
                             .ToList();
-                    } 
-                catch
-                    {
-                        
-                    }
+                } 
+                catch {
+                    
+                    // Отправляем сообщение на почту о том, что работа контроллера завершилась с ошибкой
+
+
+                    return Ok(new {massage = "Работа контроллера 'UpdatingProductQuantity' завершилось с ошибкой."});
+                }
 
                 return Ok(new {massage = "Информация о количестве товара на складах ОЗОН, успешно обновлена в базе данных."});
                 
