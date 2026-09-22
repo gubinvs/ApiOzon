@@ -1,4 +1,5 @@
 using ApiOzon;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,17 @@ builder.Services.AddHttpClient();
 
 // Конфигурация для подключения данных из appsettings.json
 builder.Services.Configure<OzonSellerParam>(builder.Configuration.GetSection("OzonSeller"));
+builder.Services.Configure<PasswordGuid>(builder.Configuration.GetSection("PasswordGuid"));
+// Извлекаем готовую строку из appsettings.json для подключения к базе данных интернет магазина
+var shopConnectionString = builder.Configuration["ConnectionDataShop:ConnectionDataString"];
+if (string.IsNullOrEmpty(shopConnectionString))
+{
+    throw new Exception("Критическая ошибка: Строка подключения ConnectionDataString не найдена в конфигурации!");
+}
+
+// Подключаем MySQL
+builder.Services.AddDbContext<ShopDbContext>(options =>
+    options.UseMySql(shopConnectionString, ServerVersion.AutoDetect(shopConnectionString)));
 
 // 🌍 Регистрируем политику CORS
 builder.Services.AddCors(options =>
@@ -21,22 +33,29 @@ builder.Services.AddCors(options =>
               .SetIsOriginAllowed(_ => true); // Разрешает запросы с любых сайтов/портов
     });
 });
+
+
+
+
+
+
+
 var app = builder.Build();
 
-// 2. Настройка конвейера Middleware (СТРОГИЙ ПОРЯДОК)
+// Настройка конвейера Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// 1. Сначала роутинг (определяем, куда идет запрос)
+// Сначала роутинг
 app.UseRouting(); 
 
-// 2. СТРОГО ВТОРОЙ (проверяем разрешения для браузера)
+// Политика безопасности
 app.UseCors("AllowAll"); 
 
-// 3. Только потом передаем запрос в контроллер
+// Только потом передаем запрос в контроллер
 app.MapControllers(); 
 
 app.Run();

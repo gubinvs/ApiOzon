@@ -1,25 +1,26 @@
 {
   "format": 1,
   "restore": {
-    "/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/ApiOzon.csproj": {}
+    "/media/sf_D_DRIVE/Development/ApiOzon/ApiOzon.csproj": {}
   },
   "projects": {
-    "/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/ApiOzon.csproj": {
+    "/media/sf_D_DRIVE/Development/ApiOzon/ApiOzon.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/ApiOzon.csproj",
+        "projectUniqueName": "/media/sf_D_DRIVE/Development/ApiOzon/ApiOzon.csproj",
         "projectName": "ApiOzon",
-        "projectPath": "/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/ApiOzon.csproj",
-        "packagesPath": "/Users/vladimirgubin/.nuget/packages/",
-        "outputPath": "/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/obj/",
+        "projectPath": "/media/sf_D_DRIVE/Development/ApiOzon/ApiOzon.csproj",
+        "packagesPath": "/home/gubinvs/.nuget/packages/",
+        "outputPath": "/media/sf_D_DRIVE/Development/ApiOzon/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/Users/vladimirgubin/.nuget/NuGet/NuGet.Config"
+          "/home/gubinvs/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
+          "/usr/lib/dotnet/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -44,6 +45,16 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.8, )"
+            },
+            "Pomelo.EntityFrameworkCore.MySql": {
+              "target": "Package",
+              "version": "[8.0.2, )"
+            },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[6.6.1, )"
@@ -80,7 +91,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/9.0.116/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
