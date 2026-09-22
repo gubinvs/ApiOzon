@@ -32,7 +32,6 @@ namespace ApiOzon
         [HttpPost]
         public IActionResult UpdatingProductQuantity (string password)
         {
-            var f = "";
             // Проверка пароля GUID
             if (_password.Password == password)
             {
@@ -41,14 +40,13 @@ namespace ApiOzon
                         // Загружаем данные из таблицы товаров
                         var product = _db.GoodsTable
                             .ToList();
-                        f = product[0].Chapter;
                     } 
                 catch
                     {
                         
                     }
 
-                return Ok(new {massage = "Информация о количестве товара на складах ОЗОН, успешно обновлена в базе данных." + f});
+                return Ok(new {massage = "Информация о количестве товара на складах ОЗОН, успешно обновлена в базе данных."});
                 
             } else
             {
