@@ -42,32 +42,40 @@ namespace ApiOzon
             // Проверка пароля GUID
             if (_password.Password == password)
             {
-                
                 try {
                     // Загружаем данные из таблицы товаров
                     var product = _db.GoodsTable
                         .ToList();
-                    
+                
                     // Перебирая массив данных товара:
                     foreach (var item in product)
                     {
-                   
+                        
                         // Находим в таблице соответствующие записи по GuidIdProduct
                         var sku = _db.SkuOzon
                                 .Where(e => e.GuidIdProduct == item.Guid)
                                 .FirstOrDefault();
                         
+
+                        
                         if (sku != null)
                         {
                             // Делаем запрос api OZON для получения данных о наличии товара на складе ОЗОН
-                            var stock = await _ozonStockService.GetFboQuantityAsync(sku.SkuOzon);
+                            var jsonResponseOzonDate = await _ozonStockService.GetFboQuantityAsync(sku.SkuOzon);
                             
                             // Десериализуем в класс
-                            var d = JsonSerializer.Deserialize<OzonStocksResponse>(stock);
+                            var responseOzonDate = JsonSerializer.Deserialize<OzonStocksResponse>(jsonResponseOzonDate);
 
-                            return Ok (new {d});
+                            // Формируем данные на обновление данных по складам
+                            var warehouseDate = new
+                            {
+                                GuidIdProduct = item.Guid,
+                                Name = "Склады ОЗОН",
+                                Quantity = responseOzonDate?.Products?[0]?.Present ?? 0
+                            };
 
-                        } else {break;}
+    
+                        }
                     }
                 } 
                 catch {
