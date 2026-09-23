@@ -2789,19 +2789,19 @@
     ]
   },
   "packageFolders": {
-    "/Users/vladimirgubin/.nuget/packages/": {}
+    "C:\\Users\\Man\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/ApiOzon.csproj",
+      "projectUniqueName": "D:\\Development\\ApiOzon\\ApiOzon.csproj",
       "projectName": "ApiOzon",
-      "projectPath": "/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/ApiOzon.csproj",
-      "packagesPath": "/Users/vladimirgubin/.nuget/packages/",
-      "outputPath": "/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/obj/",
+      "projectPath": "D:\\Development\\ApiOzon\\ApiOzon.csproj",
+      "packagesPath": "C:\\Users\\Man\\.nuget\\packages\\",
+      "outputPath": "D:\\Development\\ApiOzon\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/Users/vladimirgubin/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\Man\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
@@ -2825,7 +2825,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.100"
+      "SdkAnalysisLevel": "9.0.300"
     },
     "frameworks": {
       "net9.0": {
@@ -2877,7 +2877,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.101/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.318/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
