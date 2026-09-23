@@ -44,8 +44,7 @@ namespace ApiOzon
             if (_password.Password == password)
             {
                 try {
-                        // 1. Быстро собираем данные из БД за ОДИН шаг
-                        // Используем анонимный объект, чтобы вытащить только нужные для работы поля (Guid и Sku)
+                        // 1. Оптимизируем БД: получаем только нужные пары (Product Guid -> Sku) за ОДИН запрос
                         var productsWithSku = await _db.GoodsTable
                             .Join(
                                 _db.SkuOzon,
@@ -55,27 +54,40 @@ namespace ApiOzon
                             )
                             .ToListAsync();
 
-                        if (!productsWithSku.Any()) return Ok(new {massage = "productsWithSku - пуст!"});
+                        // 2. Создаем потокобезопасную коллекцию для сбора результатов
+                        var warehouseDataList = new System.Collections.Concurrent.ConcurrentBag<object>();
 
-                        // 2. Собираем все SKU в единый список для отправки в API
-                        var allSkuList = productsWithSku.Select(x => x.SkuOzon).ToList();
+                        // 3. Запускаем параллельную обработку API-запросов (например, по 10 одновременно, чтобы не спамить Ozon)
+                        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 10 };
 
-                        // 3. Делаем ОДИН пакетный запрос к API Ozon (передаем список SKU)
-                        // Примечание: Метод GetFboQuantityBatchAsync приведен как целевой пример оптимизации API
-                        var jsonResponseOzonDate = await _ozonStockService.GetFboQuantityBatchAsync(allSkuList);
-                        var responseOzonDate = JsonSerializer.Deserialize<OzonStocksResponse>(jsonResponseOzonDate);
-
-                        // Создаем словарь для быстрого поиска остатков по SKU (O(1))
-                        var stocksBySku = responseOzonDate?.Products?
-                            .ToDictionary(p => p.Sku, p => p.Present) ?? new Dictionary<string, int>();
-
-                        // 4. Формируем итоговый список данных на обновление
-                        var warehouseDataList = productsWithSku.Select(item => new
+                        await Parallel.ForEachAsync(productsWithSku, parallelOptions, async (item, cancellationToken) =>
                         {
-                            GuidIdProduct = item.Guid,
-                            Name = "Склады ОЗОН",
-                            Quantity = stocksBySku.TryGetValue(item.SkuOzon, out var quantity) ? quantity : 0
-                        }).ToList();
+                            try
+                            {
+                                // Используем ваш ОРИГИНАЛЬНЫЙ метод, который принимает один SKU
+                                var jsonResponseOzonDate = await _ozonStockService.GetFboQuantityAsync(item.SkuOzon);
+                                
+                                if (!string.IsNullOrEmpty(jsonResponseOzonDate))
+                                {
+                                    var responseOzonDate = JsonSerializer.Deserialize<OzonStocksResponse>(jsonResponseOzonDate);
+                                    
+                                    warehouseDataList.Add(new
+                                    {
+                                        GuidIdProduct = item.Guid,
+                                        Name = "Склады ОЗОН",
+                                        Quantity = responseOzonDate?.Products?[0]?.Present ?? 0
+                                    });
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                // Здесь стоит обработать ошибку (например, логировать таймаут или ошибку сети)
+                            }
+                        });
+                        
+                        // Записываем данные в базу
+                        
+                        // return Ok(warehouseDataList);
                 } 
                 catch {
                     
