@@ -11,7 +11,9 @@ builder.Services.AddHttpClient();
 
 // Конфигурация для подключения данных из appsettings.json
 builder.Services.Configure<OzonSellerParam>(builder.Configuration.GetSection("OzonSeller"));
+builder.Services.Configure<OzonDeliveryParam>(builder.Configuration.GetSection("OzonDelivery"));
 builder.Services.Configure<PasswordGuid>(builder.Configuration.GetSection("PasswordGuid"));
+builder.Services.Configure<EmailSettingsParam>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IOzonStockService, OzonStockService>();
 
 // Извлекаем готовую строку из appsettings.json для подключения к базе данных интернет магазина
