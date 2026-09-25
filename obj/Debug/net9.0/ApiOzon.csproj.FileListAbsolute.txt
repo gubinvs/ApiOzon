@@ -219,112 +219,148 @@ D:/Development/ApiOzon/obj/Debug/net9.0/ref/ApiOzon.dll
 /media/sf_D_DRIVE/Development/ApiOzon/obj/Debug/net9.0/ApiOzon.pdb
 /media/sf_D_DRIVE/Development/ApiOzon/obj/Debug/net9.0/ApiOzon.genruntimeconfig.cache
 /media/sf_D_DRIVE/Development/ApiOzon/obj/Debug/net9.0/ref/ApiOzon.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\appsettings.Development.json
-D:\Development\ApiOzon\bin\Debug\net9.0\appsettings.json
-D:\Development\ApiOzon\bin\Debug\net9.0\ApiOzon.staticwebassets.endpoints.json
-D:\Development\ApiOzon\bin\Debug\net9.0\ApiOzon.exe
-D:\Development\ApiOzon\bin\Debug\net9.0\ApiOzon.deps.json
-D:\Development\ApiOzon\bin\Debug\net9.0\ApiOzon.runtimeconfig.json
-D:\Development\ApiOzon\bin\Debug\net9.0\ApiOzon.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\ApiOzon.pdb
-D:\Development\ApiOzon\bin\Debug\net9.0\Humanizer.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Microsoft.Bcl.AsyncInterfaces.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Microsoft.CodeAnalysis.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Microsoft.CodeAnalysis.CSharp.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Microsoft.CodeAnalysis.CSharp.Workspaces.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Microsoft.CodeAnalysis.Workspaces.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Microsoft.EntityFrameworkCore.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Microsoft.EntityFrameworkCore.Abstractions.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Microsoft.EntityFrameworkCore.Design.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Microsoft.EntityFrameworkCore.Relational.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Microsoft.Extensions.DependencyModel.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Microsoft.OpenApi.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Mono.TextTemplating.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\MySqlConnector.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Pomelo.EntityFrameworkCore.MySql.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Swashbuckle.AspNetCore.Annotations.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Swashbuckle.AspNetCore.Swagger.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerGen.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerUI.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\System.CodeDom.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\System.Composition.AttributedModel.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\System.Composition.Convention.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\System.Composition.Hosting.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\System.Composition.Runtime.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\System.Composition.TypedParts.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\YamlDotNet.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\cs\Microsoft.CodeAnalysis.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\de\Microsoft.CodeAnalysis.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\es\Microsoft.CodeAnalysis.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\fr\Microsoft.CodeAnalysis.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\it\Microsoft.CodeAnalysis.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\ja\Microsoft.CodeAnalysis.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\ko\Microsoft.CodeAnalysis.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\pl\Microsoft.CodeAnalysis.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\pt-BR\Microsoft.CodeAnalysis.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\ru\Microsoft.CodeAnalysis.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\tr\Microsoft.CodeAnalysis.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\zh-Hans\Microsoft.CodeAnalysis.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\zh-Hant\Microsoft.CodeAnalysis.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\cs\Microsoft.CodeAnalysis.CSharp.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\de\Microsoft.CodeAnalysis.CSharp.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\es\Microsoft.CodeAnalysis.CSharp.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\fr\Microsoft.CodeAnalysis.CSharp.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\it\Microsoft.CodeAnalysis.CSharp.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\ja\Microsoft.CodeAnalysis.CSharp.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\ko\Microsoft.CodeAnalysis.CSharp.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\pl\Microsoft.CodeAnalysis.CSharp.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\pt-BR\Microsoft.CodeAnalysis.CSharp.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\ru\Microsoft.CodeAnalysis.CSharp.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\tr\Microsoft.CodeAnalysis.CSharp.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\zh-Hans\Microsoft.CodeAnalysis.CSharp.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\zh-Hant\Microsoft.CodeAnalysis.CSharp.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\cs\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\de\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\es\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\fr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\it\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\ja\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\ko\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\pl\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\pt-BR\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\ru\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\tr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\zh-Hans\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\zh-Hant\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\cs\Microsoft.CodeAnalysis.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\de\Microsoft.CodeAnalysis.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\es\Microsoft.CodeAnalysis.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\fr\Microsoft.CodeAnalysis.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\it\Microsoft.CodeAnalysis.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\ja\Microsoft.CodeAnalysis.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\ko\Microsoft.CodeAnalysis.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\pl\Microsoft.CodeAnalysis.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\pt-BR\Microsoft.CodeAnalysis.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\ru\Microsoft.CodeAnalysis.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\tr\Microsoft.CodeAnalysis.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.resources.dll
-D:\Development\ApiOzon\bin\Debug\net9.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
-D:\Development\ApiOzon\obj\Debug\net9.0\ApiOzon.csproj.AssemblyReference.cache
-D:\Development\ApiOzon\obj\Debug\net9.0\rpswa.dswa.cache.json
-D:\Development\ApiOzon\obj\Debug\net9.0\ApiOzon.GeneratedMSBuildEditorConfig.editorconfig
-D:\Development\ApiOzon\obj\Debug\net9.0\ApiOzon.AssemblyInfoInputs.cache
-D:\Development\ApiOzon\obj\Debug\net9.0\ApiOzon.AssemblyInfo.cs
-D:\Development\ApiOzon\obj\Debug\net9.0\ApiOzon.csproj.CoreCompileInputs.cache
-D:\Development\ApiOzon\obj\Debug\net9.0\ApiOzon.MvcApplicationPartsAssemblyInfo.cs
-D:\Development\ApiOzon\obj\Debug\net9.0\ApiOzon.MvcApplicationPartsAssemblyInfo.cache
-D:\Development\ApiOzon\obj\Debug\net9.0\ApiOzon.sourcelink.json
-D:\Development\ApiOzon\obj\Debug\net9.0\rjimswa.dswa.cache.json
-D:\Development\ApiOzon\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
-D:\Development\ApiOzon\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
-D:\Development\ApiOzon\obj\Debug\net9.0\scopedcss\bundle\ApiOzon.styles.css
-D:\Development\ApiOzon\obj\Debug\net9.0\staticwebassets.build.json
-D:\Development\ApiOzon\obj\Debug\net9.0\staticwebassets.build.json.cache
-D:\Development\ApiOzon\obj\Debug\net9.0\staticwebassets.development.json
-D:\Development\ApiOzon\obj\Debug\net9.0\staticwebassets.build.endpoints.json
-D:\Development\ApiOzon\obj\Debug\net9.0\ApiOzon.csproj.Up2Date
-D:\Development\ApiOzon\obj\Debug\net9.0\ApiOzon.dll
-D:\Development\ApiOzon\obj\Debug\net9.0\refint\ApiOzon.dll
-D:\Development\ApiOzon\obj\Debug\net9.0\ApiOzon.pdb
-D:\Development\ApiOzon\obj\Debug\net9.0\ApiOzon.genruntimeconfig.cache
-D:\Development\ApiOzon\obj\Debug\net9.0\ref\ApiOzon.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/Humanizer.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/Microsoft.Bcl.AsyncInterfaces.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/Microsoft.CodeAnalysis.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/Microsoft.CodeAnalysis.CSharp.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/Microsoft.CodeAnalysis.CSharp.Workspaces.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/Microsoft.CodeAnalysis.Workspaces.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/Microsoft.EntityFrameworkCore.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/Microsoft.EntityFrameworkCore.Abstractions.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/Microsoft.EntityFrameworkCore.Design.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/Microsoft.EntityFrameworkCore.Relational.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/Microsoft.Extensions.DependencyModel.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/Mono.TextTemplating.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/MySqlConnector.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/Pomelo.EntityFrameworkCore.MySql.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/System.CodeDom.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/System.Composition.AttributedModel.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/System.Composition.Convention.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/System.Composition.Hosting.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/System.Composition.Runtime.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/System.Composition.TypedParts.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/cs/Microsoft.CodeAnalysis.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/de/Microsoft.CodeAnalysis.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/es/Microsoft.CodeAnalysis.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/fr/Microsoft.CodeAnalysis.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/it/Microsoft.CodeAnalysis.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/ja/Microsoft.CodeAnalysis.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/ko/Microsoft.CodeAnalysis.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/pl/Microsoft.CodeAnalysis.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/pt-BR/Microsoft.CodeAnalysis.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/ru/Microsoft.CodeAnalysis.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/tr/Microsoft.CodeAnalysis.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/zh-Hans/Microsoft.CodeAnalysis.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/zh-Hant/Microsoft.CodeAnalysis.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/cs/Microsoft.CodeAnalysis.CSharp.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/de/Microsoft.CodeAnalysis.CSharp.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/es/Microsoft.CodeAnalysis.CSharp.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/fr/Microsoft.CodeAnalysis.CSharp.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/it/Microsoft.CodeAnalysis.CSharp.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/ja/Microsoft.CodeAnalysis.CSharp.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/ko/Microsoft.CodeAnalysis.CSharp.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/pl/Microsoft.CodeAnalysis.CSharp.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/pt-BR/Microsoft.CodeAnalysis.CSharp.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/ru/Microsoft.CodeAnalysis.CSharp.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/tr/Microsoft.CodeAnalysis.CSharp.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/zh-Hans/Microsoft.CodeAnalysis.CSharp.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/zh-Hant/Microsoft.CodeAnalysis.CSharp.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/cs/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/de/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/es/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/fr/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/it/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/ja/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/ko/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/pl/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/pt-BR/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/ru/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/tr/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/zh-Hans/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/zh-Hant/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/cs/Microsoft.CodeAnalysis.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/de/Microsoft.CodeAnalysis.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/es/Microsoft.CodeAnalysis.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/fr/Microsoft.CodeAnalysis.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/it/Microsoft.CodeAnalysis.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/ja/Microsoft.CodeAnalysis.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/ko/Microsoft.CodeAnalysis.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/pl/Microsoft.CodeAnalysis.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/pt-BR/Microsoft.CodeAnalysis.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/ru/Microsoft.CodeAnalysis.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/tr/Microsoft.CodeAnalysis.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/zh-Hans/Microsoft.CodeAnalysis.Workspaces.resources.dll
+D:/Development/ApiOzon/bin/Debug/net9.0/zh-Hant/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/Humanizer.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/Microsoft.Bcl.AsyncInterfaces.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/Microsoft.CodeAnalysis.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/Microsoft.CodeAnalysis.CSharp.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/Microsoft.CodeAnalysis.CSharp.Workspaces.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/Microsoft.CodeAnalysis.Workspaces.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/Microsoft.EntityFrameworkCore.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/Microsoft.EntityFrameworkCore.Abstractions.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/Microsoft.EntityFrameworkCore.Design.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/Microsoft.EntityFrameworkCore.Relational.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/Microsoft.Extensions.DependencyModel.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/Mono.TextTemplating.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/MySqlConnector.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/Pomelo.EntityFrameworkCore.MySql.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/System.CodeDom.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/System.Composition.AttributedModel.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/System.Composition.Convention.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/System.Composition.Hosting.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/System.Composition.Runtime.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/System.Composition.TypedParts.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/cs/Microsoft.CodeAnalysis.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/de/Microsoft.CodeAnalysis.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/es/Microsoft.CodeAnalysis.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/fr/Microsoft.CodeAnalysis.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/it/Microsoft.CodeAnalysis.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/ja/Microsoft.CodeAnalysis.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/ko/Microsoft.CodeAnalysis.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/pl/Microsoft.CodeAnalysis.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/pt-BR/Microsoft.CodeAnalysis.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/ru/Microsoft.CodeAnalysis.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/tr/Microsoft.CodeAnalysis.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/zh-Hans/Microsoft.CodeAnalysis.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/zh-Hant/Microsoft.CodeAnalysis.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/cs/Microsoft.CodeAnalysis.CSharp.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/de/Microsoft.CodeAnalysis.CSharp.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/es/Microsoft.CodeAnalysis.CSharp.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/fr/Microsoft.CodeAnalysis.CSharp.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/it/Microsoft.CodeAnalysis.CSharp.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/ja/Microsoft.CodeAnalysis.CSharp.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/ko/Microsoft.CodeAnalysis.CSharp.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/pl/Microsoft.CodeAnalysis.CSharp.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/pt-BR/Microsoft.CodeAnalysis.CSharp.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/ru/Microsoft.CodeAnalysis.CSharp.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/tr/Microsoft.CodeAnalysis.CSharp.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/zh-Hans/Microsoft.CodeAnalysis.CSharp.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/zh-Hant/Microsoft.CodeAnalysis.CSharp.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/cs/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/de/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/es/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/fr/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/it/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/ja/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/ko/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/pl/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/pt-BR/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/ru/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/tr/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/zh-Hans/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/zh-Hant/Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/cs/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/de/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/es/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/fr/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/it/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/ja/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/ko/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/pl/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/pt-BR/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/ru/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/tr/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/zh-Hans/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/bin/Debug/net9.0/zh-Hant/Microsoft.CodeAnalysis.Workspaces.resources.dll
+/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/obj/Debug/net9.0/ApiOzon.sourcelink.json
