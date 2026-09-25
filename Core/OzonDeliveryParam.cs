@@ -1,21 +1,13 @@
 using System.Text.Json.Serialization;
 
-
 namespace ApiOzon
 {
     public class OzonDeliveryParam
     {
-        [JsonPropertyName("auth_url")]
-        public string AuthUrl {get; set;} = string.Empty;
-
-        [JsonPropertyName("host")]
-        public string Host {get; set;} = string.Empty;
-
-        [JsonPropertyName("client_id")]
-        public string ClientId {get; set;} = string.Empty;
-
-        [JsonPropertyName("client_secret")]
-        public string ClientSecret {get; set;} = string.Empty;
-
+        // Имена должны в точности повторять ключи из appsettings.json
+        public string auth_url { get; set; } = string.Empty;
+        public string host { get; set; } = string.Empty;
+        public string client_id { get; set; } = string.Empty;
+        public string client_secret { get; set; } = string.Empty;
     }
 }
