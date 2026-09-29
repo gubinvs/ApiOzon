@@ -1,6 +1,7 @@
 using ApiOzon;
 using ApiOzon.Services;
 using Microsoft.EntityFrameworkCore;
+using ApiOzon;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,10 @@ builder.Services.AddScoped<IOzonStockService, OzonStockService>();
 // Сервис авторизации должен быть СТРОГО один (AddSingleton), чтобы держать кэш токена и testcookie
 builder.Services.AddSingleton<IOzonAuthService, OzonAuthService>();
 builder.Services.AddTransient<OzonAuthHandler>();
+builder.Services.AddSingleton<OzonSyncService>();
+builder.Services.AddScoped<OzonDeliveryPointDb>();
+
+
 
 // 4. Регистрируем готовый HttpClient для работы с API Доставки Ozon
 builder.Services.AddHttpClient("OzonDeliveryClient", (serviceProvider, client) =>

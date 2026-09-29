@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ApiOzon.Models;
 
 
 namespace ApiOzon
@@ -12,6 +13,8 @@ namespace ApiOzon
         public DbSet<WarehouseDb> Warehouse {get; set;} = null!;
 
         public DbSet<SkuOzonDb> SkuOzon {get; set;} = null!;
+
+        public DbSet<OzonDeliveryPoint> OzonDeliveryPoints { get; set; }
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -31,6 +34,12 @@ namespace ApiOzon
             {
                 pc.HasKey(u => u.Id);
                 pc.ToTable("skuOzon");
+            }));
+
+            modelBuilder.Entity<OzonDeliveryPoint>((pc =>
+            {
+                pc.HasKey(u => u.DeliveryPointId);
+                pc.ToTable("OzonDeliveryPoint");
             }));
         }
         internal object Find(string email)
