@@ -23,8 +23,6 @@ builder.Services.AddScoped<IOzonStockService, OzonStockService>();
 // Сервис авторизации должен быть СТРОГО один (AddSingleton), чтобы держать кэш токена и testcookie
 builder.Services.AddSingleton<IOzonAuthService, OzonAuthService>();
 builder.Services.AddTransient<OzonAuthHandler>();
-builder.Services.AddScoped<OzonSyncService>();
-builder.Services.AddScoped<OzonDeliveryPointDb>();
 
 
 
