@@ -1,7 +1,6 @@
 using ApiOzon;
 using ApiOzon.Services;
 using Microsoft.EntityFrameworkCore;
-using ApiOzon;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +15,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient(); // Базовый фабричный клиент
+builder.Services.AddTransient<OzonDeliveryAuthHandler>(); 
 
 // 3. Регистрация кастомных бизнес-сервисов (БЕЗ ДУБЛИКАТОВ)
 builder.Services.AddScoped<IOzonStockService, OzonStockService>();

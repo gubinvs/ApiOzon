@@ -1,101 +1,68 @@
+using System.Net.Http.Headers;
 using ApiOzon.Models;
-using Microsoft.EntityFrameworkCore;
-using System.Net.Http.Json;
-using System.Text.Json.Serialization;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace ApiOzon.Services
 {
-    public class OzonSyncService(
-        IServiceProvider serviceProvider,
-        IHttpClientFactory httpClientFactory,
-        ILogger<OzonSyncService> logger,
-        IConfiguration configuration) // Инжектируем конфигурацию для чтения appsettings
+    public class OzonSyncService
     {
-        public async Task<int> RunSyncAsync(CancellationToken cancellationToken)
+        private readonly OzonDeliveryParam _ozonParam;
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        private readonly ShopDbContext _db;
+
+        // Внедряем зависимости прямо в сервис
+        public OzonSyncService (
+            IOptions<OzonDeliveryParam> options,
+            IHttpClientFactory httpClientFactory,
+            ShopDbContext db
+        )
         {
-            using var scope = serviceProvider.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<ShopDbContext>(); 
-            
-            // 1. Получаем конфигурационные данные
-            var authUrl = configuration["OzonDelivery:auth_url"] ?? "https://xapi.ozon.ru/oauth/token";
-            var clientId = configuration["OzonDelivery:client_id"];
-            var clientSecret = configuration["OzonDelivery:client_secret"];
+            _ozonParam = options.Value;
+            _httpClientFactory = httpClientFactory;
+            _db = db;
+        }
 
-            if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
-            {
-                throw new InvalidOperationException("В appsettings.json не заполнены client_id или client_secret в секции OzonDelivery.");
-            }
+        
 
-            // 2. Шаг авторизации: Получаем OAuth Bearer токен
-            logger.LogInformation("Запрос OAuth токена у Ozon...");
-            using var authClient = httpClientFactory.CreateClient();
-            
-            var tokenRequestBody = new
-            {
-                client_id = clientId,
-                client_secret = clientSecret,
-                grant_type = "client_credentials",
-                scope = "delivery" // ИСПРАВЛЕНО: Добавлен обязательный scope для логистического API Ozon
-            };
-
-            var tokenResponse = await authClient.PostAsJsonAsync(authUrl, tokenRequestBody, cancellationToken);
-            if (!tokenResponse.IsSuccessStatusCode)
-            {
-                var tokenErr = await tokenResponse.Content.ReadAsStringAsync(cancellationToken);
-                logger.LogError($"Не удалось получить OAuth токен. Статус: {tokenResponse.StatusCode}. Ответ: {tokenErr}");
-                throw new HttpRequestException($"Ошибка авторизации Ozon OAuth: {tokenResponse.StatusCode}");
-            }
-
-            var tokenData = await tokenResponse.Content.ReadFromJsonAsync<OzonTokenResponse>(cancellationToken: cancellationToken);
-            if (tokenData == null || string.IsNullOrEmpty(tokenData.AccessToken))
-            {
-                throw new InvalidOperationException("Ozon вернул пустой access_token.");
-            }
-
-            logger.LogInformation("OAuth токен успешно получен. Запуск синхронизации ПВЗ...");
-
-            // 3. Настраиваем основной клиент для запросов к ПВЗ
-            var client = httpClientFactory.CreateClient("OzonDeliveryClient");
-            
-            // Принудительно устанавливаем Bearer-авторизацию
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenData.AccessToken);
-            
-            // На всякий случай очищаем старые заголовки Seller API, если они добавлялись хэндлером
-            client.DefaultRequestHeaders.Remove("Client-Id");
-            client.DefaultRequestHeaders.Remove("Api-Key");
-
-            int offset = 0;   
-            int limit = 100;  
+        public async Task<int> RunSyncAsync()
+        {
+            int off = 1; // После цикла меняем на lim, а к lim прибавляем 100 
+            int lim = 100; 
             bool hasMore = true;
             int totalSaved = 0;
 
+            var requestBody = new { 
+                type = new[] { "1" }, 
+                pagination = new { offset = off, limit = lim } 
+            };
+
+            var httpClient = _httpClientFactory.CreateClient("OzonDeliveryClient");
+            var url = $"{_ozonParam.host}/v1/delivery-point/list";
+
+
             try
             {
-                while (hasMore && !cancellationToken.IsCancellationRequested)
+                while (hasMore)
                 {
-                    var requestBody = new DeliveryPointListRequest
-                    {
-                        Type = new List<string> { "1" }, // "1" соответствует ПВЗ в Delivery API
-                        Pagination = new DeliveryPointPagination { Offset = offset, Limit = limit }
-                    };
-
-                    var listResponse = await client.PostAsJsonAsync("v1/delivery-point/list", requestBody, cancellationToken);
+                 
+                    // Отправляем POST-запрос с токеном
+                    var listResponse = await httpClient.PostAsJsonAsync(url, requestBody);
                     
                     if (!listResponse.IsSuccessStatusCode)
                     {
-                        var errBody = await listResponse.Content.ReadAsStringAsync(cancellationToken);
-                        logger.LogError($"Ozon List API вернул ошибку: {listResponse.StatusCode}. Ответ: {errBody}");
+                        var errBody = await listResponse.Content.ReadAsStringAsync();
                         break;
                     }
 
-                    var listData = await listResponse.Content.ReadFromJsonAsync<DeliveryPointListResponse>(cancellationToken: cancellationToken);
+                    var listData = await listResponse.Content.ReadFromJsonAsync<DeliveryPointListResponse>();
                     if (listData == null || listData.DeliveryPoints == null || listData.DeliveryPoints.Count == 0)
                     {
                         hasMore = false;
                         break;
                     }
 
+                    // Сбор числовых ID для детального info
                     var deliveryPointIds = listData.DeliveryPoints
                         .Select(x => x.DeliveryPointId)
                         .Distinct()
@@ -106,18 +73,18 @@ namespace ApiOzon.Services
                         DeliveryPointIds = deliveryPointIds
                     };
 
-                    var infoResponse = await client.PostAsJsonAsync("v1/delivery-point/info", infoRequestBody, cancellationToken);
+                    var infoResponse = await httpClient.PostAsJsonAsync("v1/delivery-point/info", infoRequestBody);
                     
                     if (!infoResponse.IsSuccessStatusCode)
                     {
-                        var errBody = await infoResponse.Content.ReadAsStringAsync(cancellationToken);
-                        logger.LogError($"Ozon Info API вернул ошибку: {infoResponse.StatusCode}. Ответ: {errBody}");
+                        var errBody = await infoResponse.Content.ReadAsStringAsync();
                         break;
                     }
 
-                    var infoData = await infoResponse.Content.ReadFromJsonAsync<DeliveryPointInfoResponse>(cancellationToken: cancellationToken);
+                    var infoData = await infoResponse.Content.ReadFromJsonAsync<DeliveryPointInfoResponse>();
                     if (infoData == null || infoData.DeliveryPoints == null) break;
 
+                    // Мёрджим данные List + Info и маппим в модель базы данных MySQL
                     var mappedEntities = listData.DeliveryPoints
                         .Join(infoData.DeliveryPoints, l => l.DeliveryPointId, i => i.DeliveryPointId, (l, i) => new OzonDeliveryPoint
                         {
@@ -146,58 +113,37 @@ namespace ApiOzon.Services
                         .Where(x => x.IsActive)
                         .ToList();
 
+                    // Upsert в MySQL таблицу
                     foreach (var entity in mappedEntities)
                     {
-                        var existing = await dbContext.OzonDeliveryPoints.FindAsync(new object[] { entity.DeliveryPointId }, cancellationToken);
+                        var existing = await _db.OzonDeliveryPoints.FindAsync(entity.DeliveryPointId);
                         if (existing != null)
                         {
-                            dbContext.Entry(existing).CurrentValues.SetValues(entity);
+                            _db.Entry(existing).CurrentValues.SetValues(entity);
                         }
                         else
                         {
-                            await dbContext.OzonDeliveryPoints.AddAsync(entity, cancellationToken);
+                            await _db.OzonDeliveryPoints.AddAsync(entity);
                         }
                     }
 
-                    await dbContext.SaveChangesAsync(cancellationToken);
+                    await _db.SaveChangesAsync();
 
                     totalSaved += mappedEntities.Count;
+                    off += lim; // Двигаем страницу пагинации вперед
 
-                    logger.LogInformation($"Пачка успешно сохранена в MySQL. Текущий offset: {offset}. Накоплено ПВЗ: {totalSaved}");
-
-                    if (listData.DeliveryPoints.Count < limit)
-                    {
-                        hasMore = false;
-                    }
-                    else
-                    {
-                        offset += limit;
-                    }
-
-                    await Task.Delay(800, cancellationToken);
+                    // Пауза 500мс для соблюдения Rate Limits
+                    await Task.Delay(500);
                 }
 
-                logger.LogInformation($"Синхронизация завершена успешно! Всего добавлено ПВЗ в базу: {totalSaved}");
+            
                 return totalSaved;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                logger.LogError(ex, "Критическая ошибка при синхронизации ПВЗ Ozon");
+
                 throw;
             }
         }
-    }
-
-    // Вспомогательный класс для десериализации OAuth ответа Ozon
-    public class OzonTokenResponse
-    {
-        [JsonPropertyName("access_token")]
-        public string AccessToken { get; set; } = string.Empty;
-
-        [JsonPropertyName("token_type")]
-        public string TokenType { get; set; } = string.Empty;
-
-        [JsonPropertyName("expires_in")]
-        public int ExpiresIn { get; set; }
     }
 }
