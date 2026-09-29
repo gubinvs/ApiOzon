@@ -38,7 +38,7 @@ namespace ApiOzon.Services
             };
 
             var httpClient = _httpClientFactory.CreateClient("OzonDeliveryClient");
-            var url = $"{_ozonParam.host}/v1/delivery-point/list";
+            var url = _ozonParam.host;
 
 
             try
@@ -47,7 +47,8 @@ namespace ApiOzon.Services
                 {
                  
                     // Отправляем POST-запрос с токеном
-                    var listResponse = await httpClient.PostAsJsonAsync(url, requestBody);
+                    var listResponse = await httpClient.PostAsJsonAsync("/v1/delivery-point/list", requestBody);
+                    Console.WriteLine(listResponse);
                     
                     if (!listResponse.IsSuccessStatusCode)
                     {
