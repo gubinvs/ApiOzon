@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using ApiOzon.Models;
+using ApiOzon.Services;
 
 namespace ApiOzon.Controllers
 {
@@ -9,18 +10,10 @@ namespace ApiOzon.Controllers
     [Route("v1/[controller]")]
     public class OzonDeliveryPointSyncController : ControllerBase
     {
-        /// <summary>
-        /// Контроллер принимает идентификатор GUID (своего рода пароль) и выполняет:
-        /// - Скачивание всех доступных ПВЗ из API Ozon (с обходом пагинации по 100 штук)
-        /// - Сохранение или обновление (Upsert) полученных ПВЗ в локальной базе данных
-        /// Если работа завершилась ошибкой, отправляет сообщение на почту администратора (можно вызвать ваш сервис уведомлений)
-        /// </summary>
-
         private readonly OzonSyncService _syncService;
         private readonly PasswordGuid _password;
         private readonly ShopDbContext _db;
         private readonly ILogger<OzonDeliveryPointSyncController> _logger;
-        // private readonly IEmailService _emailService; // Если нужно отправлять на почту при ошибке, добавьте сюда
 
         public OzonDeliveryPointSyncController(
             OzonSyncService syncService,
@@ -33,22 +26,21 @@ namespace ApiOzon.Controllers
             _db = db;
             _logger = logger;
         }
-
+        
         [HttpPost]
         public async Task<IActionResult> SyncDeliveryPoints([FromQuery] string password, CancellationToken cancellationToken)
         {
-            // 1. Проверка пароля GUID
+            // Проверка вашего внутреннего секретного ключа доступа приложения
             if (_password.Password != password)
             {
-                _logger.LogWarning("Попытка несанкционированного запуска синхронизации ПВЗ. Неверный пароль.");
                 return Unauthorized(new { error = "Неверный секретный ключ доступа" });
             }
 
             try
             {
-                _logger.LogInformation("Запуск синхронизации ПВЗ Ozon по запросу через триггер.");
+                _logger.LogInformation("Запуск фоновой синхронизации ПВЗ Ozon через триггер.");
                 
-                // 2. Вызов сервиса синхронизации (логика пагинации внутри)
+                // Просто вызываем метод без передачи параметров — он всё возьмет из конфигов приложения сам
                 int savedCount = await _syncService.RunSyncAsync(cancellationToken);
 
                 return Ok(new
@@ -60,21 +52,11 @@ namespace ApiOzon.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Критическая ошибка во время синхронизации ПВЗ Ozon через контроллер.");
-                
-                // =========================================================================
-                // ТУТ ВАШ КОД ОТПРАВКИ НА ПОЧТУ АДМИНИСТРАТОРА (по аналогии с остатками товаров)
-                // =========================================================================
-                // await _emailService.SendAdminNotificationAsync("Ошибка синхронизации ПВЗ Ozon", ex.Message);
-
-                return StatusCode(500, new 
-                { 
-                    error = "Ошибка во время синхронизации. Администратор уведомлен.", 
-                    details = ex.Message 
-                });
+                _logger.LogError(ex, "Критическая ошибка во время синхронизации ПВЗ Ozon.");
+                return StatusCode(500, new { error = "Ошибка во время синхронизации.", details = ex.Message });
             }
         }
-    
+
         [HttpGet("points")]
         public async Task<IActionResult> GetPoints([FromQuery] string? search, [FromQuery] int limit = 50)
         {
@@ -104,6 +86,5 @@ namespace ApiOzon.Controllers
                 return StatusCode(500, new { error = "Ошибка при чтении ПВЗ из базы данных", details = ex.Message });
             }
         }
-    
     }
 }
