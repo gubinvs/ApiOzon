@@ -16,7 +16,8 @@ builder.Services.Configure<YandexGeocoderParam>(
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddHttpClient(); // Базовый фабричный клиент
+builder.Services.AddHttpClient();
+builder.Services.AddTransient<OzonDeliveryAuthHandler>(); 
 
 // 3. Регистрация кастомных бизнес-сервисов (БЕЗ ДУБЛИКАТОВ)
 builder.Services.AddScoped<IOzonStockService, OzonStockService>();
@@ -24,6 +25,8 @@ builder.Services.AddScoped<IOzonStockService, OzonStockService>();
 // Сервис авторизации должен быть СТРОГО один (AddSingleton), чтобы держать кэш токена и testcookie
 builder.Services.AddSingleton<IOzonAuthService, OzonAuthService>();
 builder.Services.AddTransient<OzonAuthHandler>();
+
+
 
 // 4. Регистрируем готовый HttpClient для работы с API Доставки Ozon
 builder.Services.AddHttpClient("OzonDeliveryClient", (serviceProvider, client) =>
