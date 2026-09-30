@@ -9,6 +9,8 @@ builder.Services.Configure<OzonSellerParam>(builder.Configuration.GetSection("Oz
 builder.Services.Configure<OzonDeliveryParam>(builder.Configuration.GetSection("OzonDelivery"));
 builder.Services.Configure<PasswordGuid>(builder.Configuration.GetSection("PasswordGuid"));
 builder.Services.Configure<EmailSettingsParam>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.Configure<YandexGeocoderParam>(
+    builder.Configuration.GetSection("YandexGeocoder"));
 
 // 2. Регистрация базовых сервисов
 builder.Services.AddControllers();

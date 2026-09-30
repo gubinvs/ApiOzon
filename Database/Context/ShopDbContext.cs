@@ -1,38 +1,67 @@
 using Microsoft.EntityFrameworkCore;
 
-
 namespace ApiOzon
 {
     public class ShopDbContext : DbContext
     {
-        public ShopDbContext(DbContextOptions<ShopDbContext> options) : base(options){}
+        public ShopDbContext(
+            DbContextOptions<ShopDbContext> options)
+            : base(options)
+        {
+        }
 
         public DbSet<GoodsTableDb> GoodsTable { get; set; } = null!;
 
-        public DbSet<WarehouseDb> Warehouse {get; set;} = null!;
+        public DbSet<WarehouseDb> Warehouse { get; set; } = null!;
 
-        public DbSet<SkuOzonDb> SkuOzon {get; set;} = null!;
-        
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        public DbSet<SkuOzonDb> SkuOzon { get; set; } = null!;
+
+        public DbSet<OzonDeliveryPointDb> OzonDeliveryPoints { get; set; } = null!;
+
+
+        protected override void OnModelCreating(
+            ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<GoodsTableDb>((pc =>
+            modelBuilder.Entity<GoodsTableDb>(pc =>
             {
                 pc.HasKey(u => u.Id);
                 pc.ToTable("goods_table");
-            }));
+            });
 
-            modelBuilder.Entity<WarehouseDb>((pc =>
+            modelBuilder.Entity<WarehouseDb>(pc =>
             {
                 pc.HasKey(u => u.Id);
                 pc.ToTable("warehouse");
-            }));
+            });
 
-            modelBuilder.Entity<SkuOzonDb>((pc =>
+            modelBuilder.Entity<SkuOzonDb>(pc =>
             {
                 pc.HasKey(u => u.Id);
                 pc.ToTable("skuOzon");
-            }));
+            });
+
+            modelBuilder.Entity<OzonDeliveryPointDb>(pc =>
+            {
+                pc.HasKey(u => u.Id);
+                pc.ToTable("ozon_delivery_points");
+
+                pc.HasIndex(u => u.DeliveryPointId)
+                    .IsUnique();
+
+                pc.Property(u => u.Address)
+                    .HasMaxLength(1000);
+
+                pc.Property(u => u.Name)
+                    .HasMaxLength(500);
+
+                pc.Property(u => u.DeliveryPointNumber)
+                    .HasMaxLength(100);
+
+                pc.Property(u => u.MaxPrice)
+                    .HasPrecision(18, 2);
+            });
         }
+
         internal object Find(string email)
         {
             throw new NotImplementedException();

@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 
-
-
 [ApiController]
 [Route("v1/[controller]")]
 public class DeliveryPointListController : ControllerBase
