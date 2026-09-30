@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 
 namespace ApiOzon.Services
@@ -11,7 +7,10 @@ namespace ApiOzon.Services
     public interface IOzonAuthService
     {
         Task<string> GetTokenAsync();
+
+        Task<string> RefreshTokenAsync();
     }
+
 
     public class OzonAuthService : IOzonAuthService
     {
@@ -19,24 +18,32 @@ namespace ApiOzon.Services
         private readonly HttpClient _httpClient;
         private readonly CookieContainer _cookieContainer;
 
-        // Кэширование токена прямо внутри Singleton-сервиса
         private string? _cachedToken;
         private DateTime _tokenExpiry = DateTime.MinValue;
         private readonly object _lock = new object();
 
-        public OzonAuthService(IOptions<OzonDeliveryParam> options)
+
+        public OzonAuthService(
+            IOptions<OzonDeliveryParam> options)
         {
             _deliveryParam = options.Value;
+
             _cookieContainer = new CookieContainer();
 
+
             var handler = new HttpClientHandler
-            {
-                AllowAutoRedirect = false, // Отключаем авто-редирект для обработки testcookie
-                CookieContainer = _cookieContainer // Куки сохраняются здесь на все время жизни приложения
-            };
+                {
+                    AllowAutoRedirect = false,
+                    CookieContainer = _cookieContainer
+                };
+
 
             _httpClient = new HttpClient(handler);
         }
+
+        // ==========================================================
+        // Получение токена
+        // ==========================================================
 
         public async Task<string> GetTokenAsync()
         {
@@ -53,88 +60,144 @@ namespace ApiOzon.Services
                 }
             }
 
-            string url = _deliveryParam.auth_url;
+            return await RequestNewTokenAsync();
+        }
 
-            // Решение по умолчанию для Ozon Delivery: часто scope называется "delivery" или "api"
-            // Если вы знаете точный scope из ЛК Ozon, замените пустую строку на него
-            
-            var requestParams = new 
+
+        // ==========================================================
+        // ПРИНУДИТЕЛЬНОЕ обновление токена
+        // ==========================================================
+
+        public async Task<string> RefreshTokenAsync()
+        {
+            Console.WriteLine("OZON AUTH: принудительное обновление токена");
+
+            lock (_lock)
+            {
+                _cachedToken = null;
+                _tokenExpiry = DateTime.MinValue;
+            }
+
+
+            return await RequestNewTokenAsync();
+        }
+
+
+        // ==========================================================
+        // Получение нового токена у Ozon
+        // ==========================================================
+
+        private async Task<string> RequestNewTokenAsync()
+        {
+            string url = _deliveryParam.auth_url;
+            var requestParams = new
             {
                 client_id = _deliveryParam.client_id,
                 client_secret = _deliveryParam.client_secret,
                 grant_type = "client_credentials",
-                scope = new[] { "delivery-api.all" } 
+                scope = new[]
+                {
+                    "delivery-api.all"
+                }
             };
 
-
-            var content = JsonContent.Create(requestParams);
             int maxAttempts = 3;
+
             for (int i = 0; i < maxAttempts; i++)
             {
-                
-                var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
+                var content = JsonContent.Create(requestParams);
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = content
+                };
 
                 HttpResponseMessage response = await _httpClient.SendAsync(request);
 
-                // Обработка testcookie
+                // ==============================================
+                // testcookie / redirect
+                // ==============================================
+
                 if (response.StatusCode == HttpStatusCode.Redirect || response.StatusCode == HttpStatusCode.TemporaryRedirect)
                 {
                     if (response.Headers.Location != null)
                     {
-                        url = response.Headers.Location.IsAbsoluteUri 
-                            ? response.Headers.Location.AbsoluteUri 
-                            : new Uri(new Uri(url), response.Headers.Location).AbsoluteUri;
+                        url = response.Headers.Location.IsAbsoluteUri
+                                    ? response.Headers.Location.AbsoluteUri
+                                    : new Uri(new Uri(url), response.Headers.Location).AbsoluteUri;
                         continue;
                     }
                 }
 
-                // === ВАЖНЫЙ БЛОК: Логируем подробный текст ошибки 400 ===
+                // ==============================================
+                // Ошибка Ozon
+                // ==============================================
+
                 if (!response.IsSuccessStatusCode)
                 {
                     string errorResponse = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"Сервер Ozon вернул статус {(int)response.StatusCode}. Ответ сервера: {errorResponse}");
+
+                    throw new Exception($"Сервер Ozon вернул статус " + $"{(int)response.StatusCode}. " + $"Ответ сервера: {errorResponse}");
                 }
+
+                // ==============================================
+                // Читаем ответ
+                // ==============================================
 
                 string jsonResponse = await response.Content.ReadAsStringAsync();
-                using (JsonDocument doc = JsonDocument.Parse(jsonResponse))
+                using JsonDocument doc = JsonDocument.Parse(jsonResponse);
+                JsonElement root = doc.RootElement;
+                if (!root.TryGetProperty("access_token", out JsonElement tokenElement))
                 {
-                    JsonElement root = doc.RootElement;
-                    
-                    if (root.TryGetProperty("access_token", out JsonElement tokenElement))
-                    {
-                        _cachedToken = tokenElement.GetString();
-
-                        // Безопасное чтение expires_in (обрабатываем и число, и строку)
-                        int expiresInSeconds = 3600; // значение по умолчанию (1 час)
-
-                        if (root.TryGetProperty("expires_in", out JsonElement expElement))
-                        {
-                            if (expElement.ValueKind == JsonValueKind.Number)
-                            {
-                                expiresInSeconds = expElement.GetInt32();
-                            }
-                            else if (expElement.ValueKind == JsonValueKind.String)
-                            {
-                                // Если Ozon прислал "3600" как строку, конвертируем её в int
-                                if (!int.TryParse(expElement.GetString(), out expiresInSeconds))
-                                {
-                                    expiresInSeconds = 3600; 
-                                }
-                            }
-                        }
-
-                        // Обновляем время жизни кэша токена
-                        _tokenExpiry = DateTime.UtcNow.AddSeconds(expiresInSeconds);
-
-                        return _cachedToken!;
-                    }
-                    
-                    throw new Exception("Параметр 'access_token' не найден в ответе Ozon.");
+                    throw new Exception("Параметр " + "'access_token' " + "не найден в ответе Ozon.");
                 }
+
+                string? token = tokenElement.GetString();
+
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    throw new Exception("Ozon вернул пустой access_token.");
+                }
+
+                // ==============================================
+                // Срок действия
+                // ==============================================
+
+                int expiresInSeconds = 3600;
+
+                if (root.TryGetProperty("expires_in", out JsonElement expElement))
+                {
+                    if (expElement.ValueKind == JsonValueKind.Number)
+                    {
+                        expiresInSeconds = expElement.GetInt32();
+                    }
+                    else if (expElement.ValueKind == JsonValueKind.String)
+                    {
+                        if (
+                            !int.TryParse(expElement.GetString(), out expiresInSeconds))
+                        {
+                            expiresInSeconds = 3600;
+                        }
+                    }
+                }
+
+
+                // ==============================================
+                // Сохраняем токен
+                // ==============================================
+
+                lock (_lock)
+                {
+                    _cachedToken = token;
+                    _tokenExpiry = DateTime.UtcNow.AddSeconds(expiresInSeconds);
+                }
+
+                Console.WriteLine($"OZON AUTH: новый токен получен. " + $"Срок: {expiresInSeconds} сек.");
+
+                return token;
             }
 
-            throw new Exception("Не удалось пройти проверку testcookie: превышено количество редиректов Ozon.");
-        }
 
+            throw new Exception("Не удалось пройти проверку " + "testcookie: превышено количество " + "редиректов Ozon.");
+        }
     }
 }

@@ -1,7 +1,5 @@
-using System.Net.Http;
+using System.Net;
 using System.Net.Http.Headers;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace ApiOzon.Services
 {
@@ -9,29 +7,72 @@ namespace ApiOzon.Services
     {
         private readonly IOzonAuthService _authService;
 
-        public OzonAuthHandler(IOzonAuthService authService)
+        public OzonAuthHandler(
+            IOzonAuthService authService)
         {
             _authService = authService;
         }
 
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
         {
-            // 1. Берем живой OAuth JWT-токен из кэша
+            // ==================================================
+            // Получаем текущий токен
+            // ==================================================
+
             string token = await _authService.GetTokenAsync();
 
-            // 2. Добавляем стандартную Bearer авторизацию
+
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            // 3. Вычищаем заголовки перед записью
+            // ==================================================
+            // Client-Id
+            // ==================================================
+
             request.Headers.Remove("Client-Id");
             request.Headers.Remove("client-id");
             request.Headers.Remove("Api-Key");
+            request.Headers.Add("Client-Id","5755054");
 
-            // 4. ДЛЯ ДОСТАВКИ: В заголовок Client-Id нужно передавать ваш цифровой Seller ID!
-            request.Headers.Add("Client-Id", "5755054");
+            // ==================================================
+            // Отправляем запрос
+            // ==================================================
 
-            // 5. Отправляем запрос на api-delivery.ozon.ru
-            return await base.SendAsync(request, cancellationToken);
+            var response = await base.SendAsync(request, cancellationToken);
+
+            // ==================================================
+            // Всё нормально
+            // ==================================================
+
+            if (response.StatusCode != HttpStatusCode.Unauthorized)
+            {
+                return response;
+            }
+
+            // ==================================================
+            // Получили 401
+            // ==================================================
+
+            Console.WriteLine("OZON AUTH: получен 401. " + "Обновляем токен...");
+            response.Dispose();
+
+            // ==================================================
+            // Получаем НОВЫЙ токен
+            // ==================================================
+
+            string newToken = await _authService.RefreshTokenAsync();
+
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", newToken);
+
+            // ==================================================
+            // Повторяем запрос ОДИН раз
+            // ==================================================
+
+            Console.WriteLine("OZON AUTH: повторяем запрос " + "с новым токеном");
+
+            return await base.SendAsync(request,cancellationToken);
         }
     }
 }
