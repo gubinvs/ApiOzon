@@ -109,7 +109,8 @@ namespace ApiOzon
                         {
                             type = new[]
                             {
-                                page.ToString()
+                                "1"
+                                // page.ToString()
                             },
 
                             pagination = new
@@ -221,13 +222,11 @@ namespace ApiOzon
                         // ==========================================
                         // 4. Сохраняем / обновляем БД
                         // ==========================================
-
                         foreach (var point in infoData.DeliveryPoints)
                         {
                             // ======================================
                             // Ищем запись по DeliveryPointId
                             // ======================================
-
                             var dbPoint = await _db.OzonDeliveryPoints
                                 .FirstOrDefaultAsync(x => x.DeliveryPointId == point.DeliveryPointId);
 
@@ -236,41 +235,58 @@ namespace ApiOzon
                                 // ==================================
                                 // НЕТ записи СОЗДАЁМ новую
                                 // ==================================
-
                                 dbPoint = new OzonDeliveryPointDb
-                                    {
-                                        DeliveryPointId = point.DeliveryPointId,
-                                        DeliveryPointNumber = point.DeliveryPointNumber,
-                                        Name = point.Name,
-                                        Address = point.FullAddress,
-                                        Latitude = point.Coordinates.Latitude,
-                                        Longitude = point.Coordinates.Longitude,
-                                        IsActive = point.IsActive
-                                    };
+                                {
+                                    DeliveryPointId = point.DeliveryPointId,
+                                    DeliveryPointNumber = point.DeliveryPointNumber,
+                                    Name = point.Name,
+                                    Address = point.FullAddress,
+                                    Latitude = point.Coordinates?.Latitude,
+                                    Longitude = point.Coordinates?.Longitude,
+                                    IsActive = point.IsActive,
+                                    
+                                    // Добавляем пропущенные поля:
+                                    StoragePeriodDays = point.StoragePeriodDays,
+                                    FittingRoomsCount = point.FittingRoomsCount,
+                                    IsBulky = point.IsBulky,
+                                    MaxWeightG = point.Restrictions.MaxWeightG,
+                                    MaxWidthMm = point.Restrictions.MaxWidthMm,
+                                    MaxLengthMm = point.Restrictions.MaxLengthMm,
+                                    MaxHeightMm = point.Restrictions.MaxHeightMm,
+                                   
+                                };
 
                                 _db.OzonDeliveryPoints.Add(dbPoint);
-
-                                Console.WriteLine($"EFCORE: ДОБАВЛЕН " + $"{point.DeliveryPointId}");
+                                Console.WriteLine($"EFCORE: ДОБАВЛЕН {point.DeliveryPointId}");
                             }
                             else
                             {
                                 // ==================================
                                 // ЗАПИСЬ ЕСТЬ ОБНОВЛЯЕМ
                                 // ==================================
-
                                 dbPoint.DeliveryPointNumber = point.DeliveryPointNumber;
                                 dbPoint.Name = point.Name;
                                 dbPoint.Address = point.FullAddress;
-                                dbPoint.Latitude = point.Coordinates.Latitude;
-                                dbPoint.Longitude = point.Coordinates.Longitude;
+                                dbPoint.Latitude = point.Coordinates?.Latitude;
+                                dbPoint.Longitude = point.Coordinates?.Longitude;
                                 dbPoint.IsActive = point.IsActive;
                                 
-                                Console.WriteLine( $"EFCORE: ОБНОВЛЁН " + $"{point.DeliveryPointId}");
+                                // Обновляем пропущенные поля:
+                                dbPoint.StoragePeriodDays = point.StoragePeriodDays;
+                                dbPoint.FittingRoomsCount = point.FittingRoomsCount;
+                                dbPoint.IsBulky = point.IsBulky;
+                                dbPoint.MaxWeightG = point.Restrictions.MaxWeightG;
+                                dbPoint.MaxWidthMm = point.Restrictions.MaxWidthMm;
+                                dbPoint.MaxLengthMm = point.Restrictions.MaxLengthMm;
+                                dbPoint.MaxHeightMm = point.Restrictions.MaxHeightMm;
+                               
+
+                                Console.WriteLine($"EFCORE: ОБНОВЛЁН {point.DeliveryPointId}");
                             }
                         }
 
                         // ==========================================
-                        // Сохраняем изменения
+                        // Сохраняем изменения в БД
                         // ==========================================
 
                         await _db.SaveChangesAsync();
