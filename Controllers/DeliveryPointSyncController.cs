@@ -8,7 +8,7 @@ using System.Text.Json;
 namespace ApiOzon
 {
     /// <summary>
-    /// Контроллер принимает методом POST пароль и запускает процесс обносления базы данных 
+    /// Контроллер принимает методом POST пароль и запускает процесс обновления базы данных 
     /// по точкам ПВЗ ОЗОН обновляя данные или дополняя
     /// </summary>
     /// 
@@ -109,8 +109,7 @@ namespace ApiOzon
                         {
                             type = new[]
                             {
-                                "1"
-                                // page.ToString()
+                                page.ToString()
                             },
 
                             pagination = new
@@ -180,55 +179,55 @@ namespace ApiOzon
                     {
                         var batchIds = ids.Skip(i).Take(100).ToList();
 
-                        Console.WriteLine($"OZON INFO: " + $"запрос {batchIds.Count} ПВЗ");
+                        //Console.WriteLine($"OZON INFO: " + $"запрос {batchIds.Count} ПВЗ");
 
-                        var infoRequest = new
-                        {
-                            delivery_point_ids = batchIds
-                        };
+                        // var infoRequest = new
+                        // {
+                        //     delivery_point_ids = batchIds
+                        // };
 
-                        var infoJson = JsonSerializer.Serialize(infoRequest);
-                        var infoContent = new StringContent(infoJson, Encoding.UTF8, "application/json");
+                        // var infoJson = JsonSerializer.Serialize(infoRequest);
+                        // var infoContent = new StringContent(infoJson, Encoding.UTF8, "application/json");
 
                         // ==========================================
                         // Запрашиваем подробную информацию
                         // ==========================================
 
-                        var infoResponse = await PostToOzonAsync(client, "v1/delivery-point/info", infoContent);
-                        var infoResponseJson = await infoResponse.Content.ReadAsStringAsync();
+                        // var infoResponse = await PostToOzonAsync(client, "v1/delivery-point/info", infoContent);
+                        // var infoResponseJson = await infoResponse.Content.ReadAsStringAsync();
 
-                        if (!infoResponse.IsSuccessStatusCode)
-                        {
-                            return new ContentResult
-                            {
-                                StatusCode = (int)infoResponse.StatusCode,
-                                ContentType = "application/json",
-                                Content = infoResponseJson
-                            };
-                        }
+                        // if (!infoResponse.IsSuccessStatusCode)
+                        // {
+                        //     return new ContentResult
+                        //     {
+                        //         StatusCode = (int)infoResponse.StatusCode,
+                        //         ContentType = "application/json",
+                        //         Content = infoResponseJson
+                        //     };
+                        // }
 
                         // ==========================================
                         // Разбираем ответ
                         // ==========================================
 
-                        var infoData = JsonSerializer.Deserialize<DeliveryPointInfoResponse>(infoResponseJson);
+                        //var infoData = JsonSerializer.Deserialize<DeliveryPointInfoResponse>(infoResponseJson);
 
-                        if (infoData == null)
-                        {
-                            Console.WriteLine("OZON: пустой ответ info");
-                            continue;
-                        }
+                        // if (infoData == null)
+                        // {
+                        //     Console.WriteLine("OZON: пустой ответ info");
+                        //     continue;
+                        // }
 
                         // ==========================================
                         // 4. Сохраняем / обновляем БД
                         // ==========================================
-                        foreach (var point in infoData.DeliveryPoints)
+                        foreach (var item in listData.DeliveryPoints)
                         {
                             // ======================================
                             // Ищем запись по DeliveryPointId
                             // ======================================
                             var dbPoint = await _db.OzonDeliveryPoints
-                                .FirstOrDefaultAsync(x => x.DeliveryPointId == point.DeliveryPointId);
+                                .FirstOrDefaultAsync(x => x.DeliveryPointId == item.DeliveryPointId);
 
                             if (dbPoint == null)
                             {
@@ -237,51 +236,32 @@ namespace ApiOzon
                                 // ==================================
                                 dbPoint = new OzonDeliveryPointDb
                                 {
-                                    DeliveryPointId = point.DeliveryPointId,
-                                    DeliveryPointNumber = point.DeliveryPointNumber,
-                                    Name = point.Name,
-                                    Address = point.FullAddress,
-                                    Latitude = point.Coordinates?.Latitude,
-                                    Longitude = point.Coordinates?.Longitude,
-                                    IsActive = point.IsActive,
-                                    
-                                    // Добавляем пропущенные поля:
-                                    StoragePeriodDays = point.StoragePeriodDays,
-                                    FittingRoomsCount = point.FittingRoomsCount,
-                                    IsBulky = point.IsBulky,
-                                    MaxWeightG = point.Restrictions.MaxWeightG,
-                                    MaxWidthMm = point.Restrictions.MaxWidthMm,
-                                    MaxLengthMm = point.Restrictions.MaxLengthMm,
-                                    MaxHeightMm = point.Restrictions.MaxHeightMm,
+                                    DeliveryPointId = item.DeliveryPointId,
+                                    DeliveryPointNumber = item.DeliveryPointNumber,
+                                    Name = item.Name,
+                                    Address = item.FullAddress,
+                                    Latitude = item.Latitude,
+                                    Longitude = item.Longitude,
+                                    IsActive = item.IsActive,
                                    
                                 };
 
                                 _db.OzonDeliveryPoints.Add(dbPoint);
-                                Console.WriteLine($"EFCORE: ДОБАВЛЕН {point.DeliveryPointId}");
+                                Console.WriteLine($"EFCORE: ДОБАВЛЕН {item.DeliveryPointId}");
                             }
                             else
                             {
                                 // ==================================
                                 // ЗАПИСЬ ЕСТЬ ОБНОВЛЯЕМ
                                 // ==================================
-                                dbPoint.DeliveryPointNumber = point.DeliveryPointNumber;
-                                dbPoint.Name = point.Name;
-                                dbPoint.Address = point.FullAddress;
-                                dbPoint.Latitude = point.Coordinates?.Latitude;
-                                dbPoint.Longitude = point.Coordinates?.Longitude;
-                                dbPoint.IsActive = point.IsActive;
-                                
-                                // Обновляем пропущенные поля:
-                                dbPoint.StoragePeriodDays = point.StoragePeriodDays;
-                                dbPoint.FittingRoomsCount = point.FittingRoomsCount;
-                                dbPoint.IsBulky = point.IsBulky;
-                                dbPoint.MaxWeightG = point.Restrictions.MaxWeightG;
-                                dbPoint.MaxWidthMm = point.Restrictions.MaxWidthMm;
-                                dbPoint.MaxLengthMm = point.Restrictions.MaxLengthMm;
-                                dbPoint.MaxHeightMm = point.Restrictions.MaxHeightMm;
-                               
+                                dbPoint.DeliveryPointNumber = item.DeliveryPointNumber;
+                                dbPoint.Name = item.Name;
+                                dbPoint.Address = item.FullAddress;
+                                dbPoint.Latitude = item.Latitude;
+                                dbPoint.Longitude = item.Longitude;
+                                dbPoint.IsActive = item.IsActive;                   
 
-                                Console.WriteLine($"EFCORE: ОБНОВЛЁН {point.DeliveryPointId}");
+                                Console.WriteLine($"EFCORE: ОБНОВЛЁН {item.DeliveryPointId}");
                             }
                         }
 
@@ -291,7 +271,7 @@ namespace ApiOzon
 
                         await _db.SaveChangesAsync();
 
-                        total += infoData.DeliveryPoints.Count;
+                        total += listData.DeliveryPoints.Count;
 
                         Console.WriteLine($"БД: обработано всего {total}");
                     }

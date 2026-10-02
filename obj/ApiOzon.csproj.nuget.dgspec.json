@@ -1,25 +1,26 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Development\\ApiOzon\\ApiOzon.csproj": {}
+    "/home/gubinvs/ENCOMPONENT/ApiOzon/ApiOzon.csproj": {}
   },
   "projects": {
-    "D:\\Development\\ApiOzon\\ApiOzon.csproj": {
+    "/home/gubinvs/ENCOMPONENT/ApiOzon/ApiOzon.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Development\\ApiOzon\\ApiOzon.csproj",
+        "projectUniqueName": "/home/gubinvs/ENCOMPONENT/ApiOzon/ApiOzon.csproj",
         "projectName": "ApiOzon",
-        "projectPath": "D:\\Development\\ApiOzon\\ApiOzon.csproj",
-        "packagesPath": "C:\\Users\\Man\\.nuget\\packages\\",
-        "outputPath": "D:\\Development\\ApiOzon\\obj\\",
+        "projectPath": "/home/gubinvs/ENCOMPONENT/ApiOzon/ApiOzon.csproj",
+        "packagesPath": "/home/gubinvs/.nuget/packages/",
+        "outputPath": "/home/gubinvs/ENCOMPONENT/ApiOzon/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Man\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/home/gubinvs/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
+          "/usr/lib/dotnet/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -38,7 +39,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "9.0.100"
       },
       "frameworks": {
         "net9.0": {
@@ -90,7 +91,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.318/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/9.0.116/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

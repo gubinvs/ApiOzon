@@ -44,22 +44,8 @@ namespace ApiOzon
             modelBuilder.Entity<OzonDeliveryPointDb>(pc =>
             {
                 pc.HasKey(u => u.Id);
-                pc.ToTable("ozon_delivery_points");
+                pc.ToTable("ozonDeliveryPoints");
 
-                pc.HasIndex(u => u.DeliveryPointId)
-                    .IsUnique();
-
-                pc.Property(u => u.Address)
-                    .HasMaxLength(1000);
-
-                pc.Property(u => u.Name)
-                    .HasMaxLength(500);
-
-                pc.Property(u => u.DeliveryPointNumber)
-                    .HasMaxLength(100);
-
-                pc.Property(u => u.MaxPrice)
-                    .HasPrecision(18, 2);
             });
         }
 
