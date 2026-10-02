@@ -21,7 +21,7 @@ public class DeliveryPointListItem
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
-    [JsonPropertyName("full_address")]
+    [JsonPropertyName("address")]
     public string FullAddress { get; set; } = string.Empty;
 
     [JsonPropertyName("lat")]
@@ -33,6 +33,6 @@ public class DeliveryPointListItem
     [JsonPropertyName("is_active")]
     public bool IsActive { get; set; }
 
-    [JsonPropertyName("shipment_method_ids")]
+    [JsonPropertyName("shipment_method_id")]
     public List<long> ShipmentMethodIds { get; set; } = new();
 }
