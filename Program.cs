@@ -18,6 +18,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<OzonDeliveryAuthHandler>(); 
+builder.Services.AddScoped<
+    OzonDeliverySyncService>();
+
+builder.Services.AddHostedService<
+    OzonDeliverySyncWorker>();
+
 
 // 3. Регистрация кастомных бизнес-сервисов (БЕЗ ДУБЛИКАТОВ)
 builder.Services.AddScoped<IOzonStockService, OzonStockService>();

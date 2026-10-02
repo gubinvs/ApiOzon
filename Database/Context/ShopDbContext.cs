@@ -18,6 +18,8 @@ namespace ApiOzon
         public DbSet<SkuOzonDb> SkuOzon { get; set; } = null!;
 
         public DbSet<OzonDeliveryPointDb> OzonDeliveryPoints { get; set; } = null!;
+        public DbSet<OzonDeliverySyncState> OzonDeliverySyncStates { get; set;}
+
 
 
         protected override void OnModelCreating(

@@ -1,292 +1,349 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using System.Net;
 using System.Text;
 using System.Text.Json;
 
-namespace ApiOzon
+namespace ApiOzon.Services
 {
-    /// <summary>
-    /// Синхронизация ПВЗ Ozon с локальной базой данных.
-    ///
-    /// Алгоритм:
-    /// 1. Получаем страницу ПВЗ через /v1/delivery-point/list
-    /// 2. Получаем подробную информацию через /v1/delivery-point/info
-    /// 3. Объединяем данные по DeliveryPointId
-    /// 4. Добавляем или обновляем записи в БД
-    /// 5. Переходим на следующую страницу по cursor
-    /// </summary>
-    [ApiController]
-    [Route("v1/[controller]")]
-    public class DeliveryPointSyncController : ControllerBase
+    public class OzonDeliverySyncService
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly PasswordGuid _password;
         private readonly ShopDbContext _db;
 
-        // Минимальная задержка между запросами к Ozon
-        private static readonly TimeSpan OzonRequestDelay =
-            TimeSpan.FromMilliseconds(1500);
+        private static readonly TimeSpan NormalDelay =
+            TimeSpan.FromSeconds(3);
 
-        // Максимальное количество попыток запроса
-        private const int MaxRetryAttempts = 5;
+        private static readonly TimeSpan MaxRetryDelay =
+            TimeSpan.FromHours(1);
 
-        public DeliveryPointSyncController(
+        private const int MaxRetryAttempts = 10;
+
+        public OzonDeliverySyncService(
             IHttpClientFactory httpClientFactory,
-            IOptions<PasswordGuid> options,
             ShopDbContext db)
         {
             _httpClientFactory = httpClientFactory;
-            _password = options.Value;
             _db = db;
+        }
+
+        public async Task RunAsync(
+            CancellationToken cancellationToken)
+        {
+            var state =
+                await _db.OzonDeliverySyncStates
+                    .FirstOrDefaultAsync(
+                        x => x.Id == 1,
+                        cancellationToken);
+
+            if (state == null)
+            {
+                state = new OzonDeliverySyncState
+                {
+                    Id = 1,
+                    Page = 0,
+                    IsRunning = false
+                };
+
+                _db.OzonDeliverySyncStates.Add(state);
+
+                await _db.SaveChangesAsync(
+                    cancellationToken);
+            }
+
+            // ======================================================
+            // НЕ ЗАПУСКАЕМ ВТОРУЮ СИНХРОНИЗАЦИЮ
+            // ======================================================
+
+            if (state.IsRunning)
+            {
+                Console.WriteLine(
+                    "OZON: синхронизация уже запущена.");
+
+                return;
+            }
+
+            state.IsRunning = true;
+            state.StartedAt = DateTime.UtcNow;
+            state.FinishedAt = null;
+            state.LastError = null;
+
+            await _db.SaveChangesAsync(
+                cancellationToken);
+
+            try
+            {
+                await SyncInternalAsync(
+                    state,
+                    cancellationToken);
+
+                state.IsRunning = false;
+                state.FinishedAt = DateTime.UtcNow;
+                state.LastSuccessAt = DateTime.UtcNow;
+                state.LastError = null;
+
+                await _db.SaveChangesAsync(
+                    cancellationToken);
+
+                Console.WriteLine();
+                Console.WriteLine(
+                    "========================================");
+
+                Console.WriteLine(
+                    "OZON: СИНХРОНИЗАЦИЯ ЗАВЕРШЕНА");
+
+                Console.WriteLine(
+                    $"Получено: {state.TotalReceived}");
+
+                Console.WriteLine(
+                    $"Добавлено: {state.TotalAdded}");
+
+                Console.WriteLine(
+                    $"Обновлено: {state.TotalUpdated}");
+
+                Console.WriteLine(
+                    $"Пропущено: {state.TotalSkipped}");
+            }
+            catch (OperationCanceledException)
+            {
+                state.IsRunning = false;
+
+                await _db.SaveChangesAsync(
+                    CancellationToken.None);
+
+                Console.WriteLine(
+                    "OZON: синхронизация остановлена.");
+            }
+            catch (Exception ex)
+            {
+                state.IsRunning = false;
+                state.LastError = ex.ToString();
+
+                await _db.SaveChangesAsync(
+                    CancellationToken.None);
+
+                Console.WriteLine();
+                Console.WriteLine(
+                    "========================================");
+
+                Console.WriteLine(
+                    "OZON: ОШИБКА СИНХРОНИЗАЦИИ");
+
+                Console.WriteLine(ex);
+            }
         }
 
         // ==========================================================
         // ОСНОВНАЯ СИНХРОНИЗАЦИЯ
         // ==========================================================
 
-        [HttpPost]
-        public async Task<IActionResult> Sync(string password)
+        private async Task SyncInternalAsync(
+            OzonDeliverySyncState state,
+            CancellationToken cancellationToken)
         {
-            // ======================================================
-            // 1. ПРОВЕРКА ПАРОЛЯ
-            // ======================================================
+            var client =
+                _httpClientFactory.CreateClient(
+                    "OzonDeliveryClient");
 
-            if (_password.Password != password)
+            while (true)
             {
-                return Ok(new
-                {
-                    message = "Пароль не верен!"
-                });
-            }
+                cancellationToken.ThrowIfCancellationRequested();
 
-            var client = _httpClientFactory
-                .CreateClient("OzonDeliveryClient");
+                state.Page++;
 
-            string? cursor = null;
+                Console.WriteLine();
+                Console.WriteLine(
+                    "========================================");
 
-            int page = 0;
-            int totalReceived = 0;
-            int totalAdded = 0;
-            int totalUpdated = 0;
-            int totalSkipped = 0;
+                Console.WriteLine(
+                    $"OZON: страница {state.Page}");
 
-            try
-            {
+                Console.WriteLine(
+                    $"OZON: cursor = " +
+                    $"{state.Cursor ?? "NULL"}");
+
                 // ==================================================
-                // ЦИКЛ ПО СТРАНИЦАМ
+                // LIST
                 // ==================================================
 
-                while (true)
+                object requestObject;
+
+                if (string.IsNullOrWhiteSpace(
+                    state.Cursor))
                 {
-                    page++;
-
-                    // ==================================================
-                    // 2. ФОРМИРУЕМ ЗАПРОС LIST
-                    // ==================================================
-
-                    object requestObject;
-
-                    if (cursor == null)
+                    requestObject = new
                     {
-                        // Первая страница
-                        requestObject = new
+                        type = new[]
                         {
-                            type = new[]
-                            {
-                                "1"
-                            },
+                            "1"
+                        },
 
-                            pagination = new
-                            {
-                                offset = 0,
-                                limit = 100
-                            }
-                        };
-                    }
-                    else
+                        pagination = new
+                        {
+                            offset = 0,
+                            limit = 100
+                        }
+                    };
+                }
+                else
+                {
+                    requestObject = new
                     {
-                        // Следующая страница
-                        requestObject = new
+                        type = new[]
                         {
-                            type = new[]
-                            {
-                                "1"
-                            },
+                            "1"
+                        },
 
-                            pagination = new
-                            {
-                                limit = 100,
-                                cursor = cursor
-                            }
-                        };
-                    }
+                        pagination = new
+                        {
+                            limit = 100,
+                            cursor = state.Cursor
+                        }
+                    };
+                }
 
-                    var requestJson =
-                        JsonSerializer.Serialize(requestObject);
+                var requestJson =
+                    JsonSerializer.Serialize(
+                        requestObject);
 
-                    var content = new StringContent(
-                        requestJson,
-                        Encoding.UTF8,
-                        "application/json");
-
-                    // ==================================================
-                    // 3. LIST
-                    // ==================================================
-
-                    var listResponse = await PostToOzonAsync(
+                var listResponse =
+                    await PostToOzonAsync(
                         client,
                         "v1/delivery-point/list",
-                        content);
+                        requestJson,
+                        cancellationToken);
 
-                    var listJson =
-                        await listResponse.Content.ReadAsStringAsync();
+                var listJson =
+                    await listResponse.Content
+                        .ReadAsStringAsync(
+                            cancellationToken);
 
-                    if (!listResponse.IsSuccessStatusCode)
-                    {
-                        return new ContentResult
-                        {
-                            StatusCode = (int)listResponse.StatusCode,
-                            ContentType = "application/json",
-                            Content = listJson
-                        };
-                    }
+                if (!listResponse.IsSuccessStatusCode)
+                {
+                    throw new Exception(
+                        $"Ozon LIST HTTP " +
+                        $"{(int)listResponse.StatusCode}: " +
+                        listJson);
+                }
 
-                    var listData =
-                        JsonSerializer.Deserialize<DeliveryPointListResponse>(
+                var listData =
+                    JsonSerializer.Deserialize<
+                        DeliveryPointListResponse>(
                             listJson);
 
-                    if (listData == null)
+                if (listData == null)
+                {
+                    throw new Exception(
+                        "Ozon LIST: пустой ответ.");
+                }
+
+                if (listData.DeliveryPoints.Count == 0)
+                {
+                    Console.WriteLine(
+                        "OZON: список ПВЗ пуст.");
+
+                    break;
+                }
+
+                state.TotalReceived +=
+                    listData.DeliveryPoints.Count;
+
+                Console.WriteLine(
+                    $"OZON: получено " +
+                    $"{listData.DeliveryPoints.Count} ПВЗ");
+
+                // ==================================================
+                // INFO
+                // ==================================================
+
+                var deliveryPointIds =
+                    listData.DeliveryPoints
+                        .Select(x =>
+                            x.DeliveryPointId)
+                        .Distinct()
+                        .ToList();
+
+                var infoRequest =
+                    new DeliveryPointInfoRequest
                     {
-                        return BadRequest(
-                            "Не удалось разобрать ответ Ozon /list");
-                    }
+                        DeliveryPointIds =
+                            deliveryPointIds
+                    };
 
+                var infoJson =
+                    JsonSerializer.Serialize(
+                        infoRequest);
 
-                    // Если страница пустая — заканчиваем
-                    if (listData.DeliveryPoints.Count == 0)
-                    {
-
-                        break;
-                    }
-
-                    totalReceived +=
-                        listData.DeliveryPoints.Count;
-
-                    // ==================================================
-                    // 4. ПОЛУЧАЕМ ID ПВЗ
-                    // ==================================================
-
-                    var deliveryPointIds =
-                        listData.DeliveryPoints
-                            .Select(x => x.DeliveryPointId)
-                            .Distinct()
-                            .ToList();
-
-
-                    // ==================================================
-                    // 5. INFO
-                    // ==================================================
-
-                    var infoRequest =
-                        new DeliveryPointInfoRequest
-                        {
-                            DeliveryPointIds = deliveryPointIds
-                        };
-
-                    var infoJson =
-                        JsonSerializer.Serialize(infoRequest);
-
-                    var infoContent = new StringContent(
-                        infoJson,
-                        Encoding.UTF8,
-                        "application/json");
-
-                    var infoResponse = await PostToOzonAsync(
+                var infoResponse =
+                    await PostToOzonAsync(
                         client,
                         "v1/delivery-point/info",
-                        infoContent);
+                        infoJson,
+                        cancellationToken);
 
-                    var infoResponseJson =
-                        await infoResponse.Content.ReadAsStringAsync();
+                var infoResponseJson =
+                    await infoResponse.Content
+                        .ReadAsStringAsync(
+                            cancellationToken);
 
-                    if (!infoResponse.IsSuccessStatusCode)
-                    {
-                        return new ContentResult
-                        {
-                            StatusCode =
-                                (int)infoResponse.StatusCode,
+                if (!infoResponse.IsSuccessStatusCode)
+                {
+                    throw new Exception(
+                        $"Ozon INFO HTTP " +
+                        $"{(int)infoResponse.StatusCode}: " +
+                        infoResponseJson);
+                }
 
-                            ContentType =
-                                "application/json",
+                var infoData =
+                    JsonSerializer.Deserialize<
+                        DeliveryPointInfoResponse>(
+                            infoResponseJson);
 
-                            Content =
-                                infoResponseJson
-                        };
-                    }
+                if (infoData == null)
+                {
+                    throw new Exception(
+                        "Ozon INFO: пустой ответ.");
+                }
 
-                    var infoData =
-                        JsonSerializer.Deserialize<
-                            DeliveryPointInfoResponse>(
-                                infoResponseJson);
+                // ==================================================
+                // СОХРАНЯЕМ ПВЗ
+                // ==================================================
 
-                    if (infoData == null)
+                foreach (
+                    var listPoint
+                    in listData.DeliveryPoints)
+                {
+                    cancellationToken
+                        .ThrowIfCancellationRequested();
+
+                    var infoPoint =
+                        infoData.DeliveryPoints
+                            .FirstOrDefault(x =>
+                                x.DeliveryPointId ==
+                                listPoint.DeliveryPointId);
+
+                    if (infoPoint == null)
                     {
                         Console.WriteLine(
-                            "OZON INFO: пустой ответ");
+                            $"OZON INFO: не найден " +
+                            $"ID={listPoint.DeliveryPointId}");
 
-                        totalSkipped +=
-                            listData.DeliveryPoints.Count;
-
-                        cursor = listData.NextCursor;
-
-                        if (string.IsNullOrWhiteSpace(cursor))
-                            break;
+                        state.TotalSkipped++;
 
                         continue;
                     }
 
+                    var dbPoint =
+                        await _db.OzonDeliveryPoints
+                            .FirstOrDefaultAsync(
+                                x =>
+                                    x.DeliveryPointId ==
+                                    infoPoint.DeliveryPointId,
+                                cancellationToken);
 
-                    // ==================================================
-                    // 6. СОХРАНЯЕМ / ОБНОВЛЯЕМ БД
-                    // ==================================================
-
-                    foreach (var listPoint in listData.DeliveryPoints)
+                    if (dbPoint == null)
                     {
-                        var infoPoint =
-                            infoData.DeliveryPoints
-                                .FirstOrDefault(x =>
-                                    x.DeliveryPointId ==
-                                    listPoint.DeliveryPointId);
-
-                        // INFO не вернул этот ПВЗ
-                        if (infoPoint == null)
-                        {
-                            Console.WriteLine(
-                                $"OZON INFO: не найден ID=" +
-                                $"{listPoint.DeliveryPointId}");
-
-                            totalSkipped++;
-
-                            continue;
-                        }
-
-
-                        // Ищем существующую запись
-                        var dbPoint =
-                            await _db.OzonDeliveryPoints
-                                .FirstOrDefaultAsync(x =>
-                                    x.DeliveryPointId ==
-                                    infoPoint.DeliveryPointId);
-
-                        if (dbPoint == null)
-                        {
-                            // ==========================================
-                            // ДОБАВЛЯЕМ
-                            // ==========================================
-
-                            dbPoint = new OzonDeliveryPointDb
+                        dbPoint =
+                            new OzonDeliveryPointDb
                             {
                                 DeliveryPointId =
                                     infoPoint.DeliveryPointId,
@@ -310,168 +367,251 @@ namespace ApiOzon
                                     infoPoint.IsActive
                             };
 
-                            _db.OzonDeliveryPoints.Add(dbPoint);
+                        _db.OzonDeliveryPoints.Add(
+                            dbPoint);
 
-                            totalAdded++;
-                        }
-                        else
-                        {
-                            // ==========================================
-                            // ОБНОВЛЯЕМ
-                            // ==========================================
-
-                            dbPoint.DeliveryPointNumber =
-                                infoPoint.DeliveryPointNumber;
-
-                            dbPoint.Name =
-                                infoPoint.Name;
-
-                            dbPoint.Address =
-                                infoPoint.FullAddress;
-
-                            dbPoint.Latitude =
-                                infoPoint.Coordinates.Latitude;
-
-                            dbPoint.Longitude =
-                                infoPoint.Coordinates.Longitude;
-
-                            dbPoint.IsActive =
-                                infoPoint.IsActive;
-
-                            totalUpdated++;
-
-                        }
+                        state.TotalAdded++;
                     }
-
-                    // ==================================================
-                    // 7. СОХРАНЯЕМ ИЗМЕНЕНИЯ
-                    // ==================================================
-
-                    await _db.SaveChangesAsync();
-
-                    // ==================================================
-                    // 8. СЛЕДУЮЩАЯ СТРАНИЦА
-                    // ==================================================
-
-                    if (string.IsNullOrWhiteSpace(
-                        listData.NextCursor))
+                    else
                     {
-                        Console.WriteLine();
-                        Console.WriteLine(
-                            "OZON: страниц больше нет");
+                        dbPoint.DeliveryPointNumber =
+                            infoPoint.DeliveryPointNumber;
 
-                        break;
+                        dbPoint.Name =
+                            infoPoint.Name;
+
+                        dbPoint.Address =
+                            infoPoint.FullAddress;
+
+                        dbPoint.Latitude =
+                            infoPoint.Coordinates.Latitude;
+
+                        dbPoint.Longitude =
+                            infoPoint.Coordinates.Longitude;
+
+                        dbPoint.IsActive =
+                            infoPoint.IsActive;
+
+                        state.TotalUpdated++;
                     }
-
-                    cursor = listData.NextCursor;
-
-                    Console.WriteLine(
-                        $"OZON: следующий cursor = {cursor}");
                 }
 
-                // ======================================================
-                // 9. ИТОГ
-                // ======================================================
+                // ==================================================
+                // ВАЖНО:
+                //
+                // СНАЧАЛА сохраняем ПВЗ.
+                // ==================================================
 
-                var databaseCount =
-                    await _db.OzonDeliveryPoints.CountAsync();
+                await _db.SaveChangesAsync(
+                    cancellationToken);
 
+                // ==================================================
+                // И ТОЛЬКО ПОСЛЕ ЭТОГО сохраняем cursor.
+                // ==================================================
 
-                return Ok(new
+                state.Cursor =
+                    listData.NextCursor;
+
+                await _db.SaveChangesAsync(
+                    cancellationToken);
+
+                Console.WriteLine(
+                    $"OZON: страница {state.Page} сохранена.");
+
+                Console.WriteLine(
+                    $"OZON: cursor сохранён.");
+
+                // ==================================================
+                // ПОСЛЕДНЯЯ СТРАНИЦА
+                // ==================================================
+
+                if (string.IsNullOrWhiteSpace(
+                    state.Cursor))
                 {
-                    message =
-                        "Синхронизация ПВЗ завершена",
+                    Console.WriteLine(
+                        "OZON: страниц больше нет.");
 
-                    pages = page,
+                    break;
+                }
 
-                    received = totalReceived,
+                // ==================================================
+                // ПАУЗА
+                // ==================================================
 
-                    added = totalAdded,
+                Console.WriteLine(
+                    "OZON: ждём 3 секунды...");
 
-                    updated = totalUpdated,
-
-                    skipped = totalSkipped,
-
-                    database_count = databaseCount
-                });
-            }
-            catch (Exception ex)
-            {
-
-                return StatusCode(
-                    500,
-                    new
-                    {
-                        message =
-                            "Ошибка синхронизации",
-
-                        error =
-                            ex.Message
-                    });
+                await Task.Delay(
+                    NormalDelay,
+                    cancellationToken);
             }
         }
 
         // ==========================================================
-        // ЗАПРОС К OZON
+        // HTTP REQUEST + RETRY
         // ==========================================================
 
-        private async Task<HttpResponseMessage> PostToOzonAsync(
-            HttpClient client,
-            string url,
-            HttpContent content)
+        private async Task<HttpResponseMessage>
+            PostToOzonAsync(
+                HttpClient client,
+                string url,
+                string json,
+                CancellationToken cancellationToken)
         {
             for (
                 int attempt = 1;
                 attempt <= MaxRetryAttempts;
                 attempt++)
             {
-                // ==============================================
-                // Задержка перед запросом
-                // ==============================================
+                TimeSpan retryDelay;
 
-                await Task.Delay(OzonRequestDelay);
-
-                var response =
-                    await client.PostAsync(
-                        url,
-                        content);
-
-                // ==============================================
-                // Успешный запрос
-                // ==============================================
-
-                if (response.IsSuccessStatusCode)
+                if (attempt == 1)
                 {
-                    return response;
+                    retryDelay =
+                        TimeSpan.Zero;
+                }
+                else
+                {
+                    // 1 мин
+                    // 2 мин
+                    // 4 мин
+                    // 8 мин
+                    // 16 мин
+                    // 32 мин
+                    // 60 мин
+                    // 60 мин...
+
+                    var seconds =
+                        Math.Pow(
+                            2,
+                            attempt - 2)
+                        * 60;
+
+                    retryDelay =
+                        TimeSpan.FromSeconds(
+                            Math.Min(
+                                seconds,
+                                MaxRetryDelay
+                                    .TotalSeconds));
                 }
 
-                // ==============================================
-                // HTTP 429
-                // ==============================================
-
-                if (response.StatusCode ==
-                    HttpStatusCode.TooManyRequests)
+                if (retryDelay > TimeSpan.Zero)
                 {
-                    response.Dispose();
-
-                    var delaySeconds =
-                        Math.Min(
-                            30,
-                            (int)Math.Pow(2, attempt));
-
+                    Console.WriteLine();
+                    Console.WriteLine(
+                        $"OZON: следующая попытка " +
+                        $"через {retryDelay}");
 
                     await Task.Delay(
-                        TimeSpan.FromSeconds(
-                            delaySeconds));
-
-                    continue;
+                        retryDelay,
+                        cancellationToken);
                 }
 
-                // ==============================================
-                // Другая ошибка
-                // ==============================================
+                try
+                {
+                    Console.WriteLine();
+                    Console.WriteLine(
+                        $"OZON REQUEST: {url}");
 
-                return response;
+                    Console.WriteLine(
+                        $"Попытка " +
+                        $"{attempt}/{MaxRetryAttempts}");
+
+                    using var content =
+                        new StringContent(
+                            json,
+                            Encoding.UTF8,
+                            "application/json");
+
+                    var response =
+                        await client.PostAsync(
+                            url,
+                            content,
+                            cancellationToken);
+
+                    // ==================================================
+                    // УСПЕХ
+                    // ==================================================
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine(
+                            $"OZON: HTTP " +
+                            $"{(int)response.StatusCode}");
+
+                        return response;
+                    }
+
+                    // ==================================================
+                    // 429
+                    // ==================================================
+
+                    if (response.StatusCode ==
+                        HttpStatusCode.TooManyRequests)
+                    {
+                        Console.WriteLine(
+                            "OZON: HTTP 429.");
+
+                        response.Dispose();
+
+                        continue;
+                    }
+
+                    // ==================================================
+                    // 5XX
+                    // ==================================================
+
+                    if ((int)response.StatusCode >= 500)
+                    {
+                        Console.WriteLine(
+                            $"OZON: HTTP " +
+                            $"{(int)response.StatusCode}");
+
+                        response.Dispose();
+
+                        continue;
+                    }
+
+                    // ==================================================
+                    // Остальные 4XX
+                    //
+                    // Их повторять не будем.
+                    // ==================================================
+
+                    return response;
+                }
+                catch (HttpRequestException ex)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine(
+                        "========================================");
+
+                    Console.WriteLine(
+                        "OZON: СЕТЕВАЯ ОШИБКА");
+
+                    Console.WriteLine(
+                        $"Попытка: " +
+                        $"{attempt}/{MaxRetryAttempts}");
+
+                    Console.WriteLine(
+                        $"Ошибка: {ex.Message}");
+
+                    if (ex.InnerException != null)
+                    {
+                        Console.WriteLine(
+                            $"Inner: " +
+                            $"{ex.InnerException.Message}");
+                    }
+
+                    if (attempt ==
+                        MaxRetryAttempts)
+                    {
+                        throw;
+                    }
+
+                    Console.WriteLine(
+                        "OZON: запрос будет повторен.");
+                }
             }
 
             throw new Exception(
