@@ -28,11 +28,14 @@ namespace ApiOzon
                 _db.OzonDeliverySyncStates.Add(state);
                 await _db.SaveChangesAsync(cancellationToken);
             }
-
+            
             if (state.IsRunning)
             {
-                Console.WriteLine("OZON: синхронизация уже запущена или восстанавливается после сбоя.");
-                return;
+                Console.WriteLine("OZON: Обнаружен незавершенный сеанс после сбоя. Сбрасываю флаг и восстанавливаю работу...");
+                
+                // Вместо return; мы принудительно даем воркеру продолжить работу
+                state.IsRunning = false; 
+                await _db.SaveChangesAsync(cancellationToken);
             }
 
             state.IsRunning = true;
@@ -42,6 +45,7 @@ namespace ApiOzon
             await _db.SaveChangesAsync(cancellationToken);
 
             // Главный цикл жизнеобеспечения службы (работает до победного конца или отмены)
+                        // Главный цикл жизнеобеспечения службы (работает до победного конца или отмены)
             while (true)
             {
                 try
@@ -58,44 +62,55 @@ namespace ApiOzon
                         state.FinishedAt = DateTime.UtcNow;
                         state.LastSuccessAt = DateTime.UtcNow;
                         state.LastError = null;
-                        await _db.SaveChangesAsync(CancellationToken.None);
+                        
+                        try
+                        {
+                            await _db.SaveChangesAsync(CancellationToken.None);
+                        }
+                        catch (Exception dbEx)
+                        {
+                            Console.WriteLine($"[!] Предупреждение: Не удалось сохранить финальный статус в БД: {dbEx.Message}");
+                        }
 
                         Console.WriteLine("\n========================================");
                         Console.WriteLine("OZON: СИНХРОНИЗАЦИЯ УСПЕШНО ЗАВЕРШЕНА");
                         Console.WriteLine($"Получено: {state.TotalReceived} ПВЗ");
                         
-                        break; // Выходим из бесконечного цикла, сервис завершает работу и ждет контроллер
+                        break; 
                     }
                 }
                 catch (OperationCanceledException)
                 {
                     state.IsRunning = false;
-                    await _db.SaveChangesAsync(CancellationToken.None);
-                    Console.WriteLine("OZON: синхронизация принудительно остановлена.");
+                    try { await _db.SaveChangesAsync(CancellationToken.None); } catch { }
+                        Console.WriteLine("OZON: синхронизация принудительно остановлена.");
                     break;
                 }
                 catch (Exception ex)
                 {
-                    // Сюда мы попадаем, если Озон разорвал соединение или выдал HTTP-ошибку
-                    state.LastError = $"[Сбой связи. Ожидание 1 час]: {ex.Message}";
-                    await _db.SaveChangesAsync(CancellationToken.None);
-
                     Console.WriteLine("\n========================================");
-                    Console.WriteLine($"OZON: ОБРЫВ СВЯЗИ. Следующая попытка через 1 час.");
-                    Console.WriteLine(ex.Message);
+                    Console.WriteLine($"OZON: ОБРЫВ СВЯЗИ (Сеть/БД). Следующая попытка через 1 час.");
+                    Console.WriteLine($"Детали ошибки: {ex.Message}");
+
+                    // БЕЗОПАСНО очищаем кэш EF Core от недосохраненных ПВЗ, чтобы они не дублировались через час
+                    try
+                    {
+                        _db.ChangeTracker.Clear(); 
+                    }
+                    catch { }
 
                     try
                     {
-                        // Спим ровно 1 час. Если во время сна приложение выключат, cancellationToken корректно прервет поток
-                        await Task.Delay(ReconnectDelay, cancellationToken);
-                        Console.WriteLine("OZON: Час прошел. Пробую возобновить соединение с Озоном...");
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        state.IsRunning = false;
+                        state.LastError = $"[Сбой связи. Ожидание 1 час]: {ex.Message}";
                         await _db.SaveChangesAsync(CancellationToken.None);
-                        break;
                     }
+                    catch (Exception dbEx)
+                    {
+                        Console.WriteLine($"[!] База данных недоступна. Ошибка не записана в БД: {dbEx.Message}");
+                    }
+
+                    // Спокойно спим час...
+                    await Task.Delay(ReconnectDelay, cancellationToken);
                 }
             }
         }
