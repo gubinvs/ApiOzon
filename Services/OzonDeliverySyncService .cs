@@ -118,7 +118,7 @@ namespace ApiOzon
 
                 var requestJson = JsonSerializer.Serialize(requestObject);
                 
-                // Делаем обычный сетевой вызов
+                // Делаем обычный сетевой вызов для получения списка ПВЗ
                 var listResponse = await PostToOzonAsync(client, "v1/delivery-point/list", requestJson, cancellationToken);
                 var listJson = await listResponse.Content.ReadAsStringAsync(cancellationToken);
 
@@ -138,12 +138,43 @@ namespace ApiOzon
                     return true; 
                 }
 
+                // ==========================================
+                // 2. Получаем ID ПВЗ
+                // ==========================================
+
+                var deliveryPointIds = listData
+                    .DeliveryPoints
+                    .Select(x => x.DeliveryPointId)
+                    .Distinct()
+                    .ToList();
+
+                // ==========================================
+                // 3. Запрашиваем подробную информацию
+                // ==========================================
+
+                var infoRequest = new DeliveryPointInfoRequest
+                {
+                    DeliveryPointIds = deliveryPointIds
+                };
+
+                var infoResponse = await client.PostAsJsonAsync("v1/delivery-point/info",infoRequest);
+                var infoJson = await infoResponse.Content.ReadAsStringAsync();
+
+                var infoData = JsonSerializer.Deserialize<DeliveryPointInfoResponse>(infoJson);
+
+                if (infoData == null)
+                {
+                    Console.WriteLine("OZON: Информации о ПВЗ нет. Достигнут конец данных.");
+                    return true; 
+                }
+
+
                 state.TotalReceived += listData.DeliveryPoints.Count;
 
                 // ==================================================
                 // СОХРАНЕНИЕ ДАННЫХ В БАЗУ ДАННЫХ (OzonDeliveryPoints)
                 // ==================================================
-                foreach (var pointDto in listData.DeliveryPoints)
+                foreach (var pointDto in infoData.DeliveryPoints)
                 {
                     // Ищем ПВЗ в БД по его уникальному идентификатору от Ozon
                     var existingPoint = await _db.OzonDeliveryPoints
@@ -155,8 +186,8 @@ namespace ApiOzon
                         existingPoint.DeliveryPointNumber = pointDto.DeliveryPointNumber;
                         existingPoint.Name = pointDto.Name; 
                         existingPoint.Address = pointDto.FullAddress;
-                        existingPoint.Latitude = pointDto.Latitude; 
-                        existingPoint.Longitude = pointDto.Longitude;
+                        existingPoint.Latitude = pointDto.Coordinates.Latitude; 
+                        existingPoint.Longitude = pointDto.Coordinates.Longitude;
                         existingPoint.IsActive = pointDto.IsActive;
                     }
                     else
@@ -168,8 +199,8 @@ namespace ApiOzon
                             DeliveryPointNumber = pointDto.DeliveryPointNumber,
                             Name = pointDto.Name,
                             Address = pointDto.FullAddress,
-                            Latitude = pointDto.Latitude,
-                            Longitude = pointDto.Longitude,
+                            Latitude = pointDto.Coordinates.Latitude,
+                            Longitude = pointDto.Coordinates.Longitude,
                             IsActive = pointDto.IsActive
                         };
                         _db.OzonDeliveryPoints.Add(newPoint);

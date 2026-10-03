@@ -28,8 +28,7 @@ public class DeliveryPointListController : ControllerBase
             "v1/delivery-point/list",
             request);
 
-        var listJson = await listResponse.Content
-            .ReadAsStringAsync();
+        var listJson = await listResponse.Content.ReadAsStringAsync();
 
         if (!listResponse.IsSuccessStatusCode)
         {
@@ -41,9 +40,7 @@ public class DeliveryPointListController : ControllerBase
             };
         }
 
-        var listData =
-            JsonSerializer.Deserialize<DeliveryPointListResponse>(
-                listJson);
+        var listData = JsonSerializer.Deserialize<DeliveryPointListResponse>(listJson);
 
         if (listData == null ||
             listData.DeliveryPoints.Count == 0)
@@ -73,12 +70,9 @@ public class DeliveryPointListController : ControllerBase
             DeliveryPointIds = deliveryPointIds
         };
 
-        var infoResponse = await client.PostAsJsonAsync(
-            "v1/delivery-point/info",
-            infoRequest);
+        var infoResponse = await client.PostAsJsonAsync("v1/delivery-point/info",infoRequest);
 
-        var infoJson = await infoResponse.Content
-            .ReadAsStringAsync();
+        var infoJson = await infoResponse.Content.ReadAsStringAsync();
 
         if (!infoResponse.IsSuccessStatusCode)
         {
@@ -90,9 +84,7 @@ public class DeliveryPointListController : ControllerBase
             };
         }
 
-        var infoData =
-            JsonSerializer.Deserialize<DeliveryPointInfoResponse>(
-                infoJson);
+        var infoData = JsonSerializer.Deserialize<DeliveryPointInfoResponse>(infoJson);
 
         if (infoData == null)
         {
@@ -113,54 +105,22 @@ public class DeliveryPointListController : ControllerBase
                 infoPoint => infoPoint.DeliveryPointId,
                 (listPoint, infoPoint) => new
                 {
-                    delivery_point_id =
-                        infoPoint.DeliveryPointId,
-
-                    delivery_point_number =
-                        infoPoint.DeliveryPointNumber,
-
-                    name =
-                        infoPoint.Name,
-
-                    address =
-                        infoPoint.FullAddress,
-
-                    lat =
-                        infoPoint.Coordinates.Latitude,
-
-                    lng =
-                        infoPoint.Coordinates.Longitude,
-
-                    is_active =
-                        infoPoint.IsActive,
-
-                    storage_period_days =
-                        infoPoint.StoragePeriodDays,
-
-                    fitting_rooms_count =
-                        infoPoint.FittingRoomsCount,
-
-                    is_bulky =
-                        infoPoint.IsBulky,
-
-                    max_weight_g =
-                        infoPoint.Restrictions.MaxWeightG,
-
-                    max_width_mm =
-                        infoPoint.Restrictions.MaxWidthMm,
-
-                    max_length_mm =
-                        infoPoint.Restrictions.MaxLengthMm,
-
-                    max_height_mm =
-                        infoPoint.Restrictions.MaxHeightMm,
-
-                    max_price =
-                        infoPoint.Restrictions.MaxPrice,
-
-                    shipment_method_id =
-                        listPoint.ShipmentMethodIds
-                            .FirstOrDefault()
+                    delivery_point_id = infoPoint.DeliveryPointId,
+                    delivery_point_number = infoPoint.DeliveryPointNumber,
+                    name = infoPoint.Name,
+                    address = infoPoint.FullAddress,
+                    lat = infoPoint.Coordinates.Latitude,
+                    lng = infoPoint.Coordinates.Longitude,
+                    is_active = infoPoint.IsActive,
+                    storage_period_days = infoPoint.StoragePeriodDays,
+                    fitting_rooms_count = infoPoint.FittingRoomsCount,
+                    is_bulky = infoPoint.IsBulky,
+                    max_weight_g = infoPoint.Restrictions.MaxWeightG,
+                    max_width_mm = infoPoint.Restrictions.MaxWidthMm,
+                    max_length_mm = infoPoint.Restrictions.MaxLengthMm,
+                    max_height_mm = infoPoint.Restrictions.MaxHeightMm,
+                    max_price = infoPoint.Restrictions.MaxPrice,
+                    shipment_method_id = listPoint.ShipmentMethodIds.FirstOrDefault()
                 })
             .Where(x => x.is_active)
             .ToList();
