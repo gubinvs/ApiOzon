@@ -18,11 +18,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<OzonDeliveryAuthHandler>(); 
-builder.Services.AddScoped<
-    OzonDeliverySyncService>();
+// Регистрируем триггер как Singleton
+builder.Services.AddSingleton<OzonSyncTrigger>();
 
-builder.Services.AddHostedService<
-    OzonDeliverySyncWorker>();
+// Регистрируем сам фоновый воркер
+builder.Services.AddHostedService<OzonDeliverySyncWorker>();
+builder.Services.AddScoped<OzonDeliverySyncService>(); 
+
 
 
 // 3. Регистрация кастомных бизнес-сервисов (БЕЗ ДУБЛИКАТОВ)
