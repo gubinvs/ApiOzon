@@ -178,7 +178,7 @@ namespace ApiOzon
                 {
                     // Ищем ПВЗ в БД по его уникальному идентификатору от Ozon
                     var existingPoint = await _db.OzonDeliveryPoints
-                        .FirstOrDefaultAsync(x => x.Id == pointDto.DeliveryPointId, cancellationToken);
+                        .FirstOrDefaultAsync(x => x.DeliveryPointId == pointDto.DeliveryPointId, cancellationToken);
 
                     if (existingPoint != null)
                     {
