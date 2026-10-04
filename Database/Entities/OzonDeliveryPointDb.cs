@@ -21,7 +21,7 @@ namespace ApiOzon
 }
 
 
-// CREATE TABLE `OzonDeliveryPoints` (
+// CREATE TABLE `ozonDeliveryPoints` (
 //     `Id` INT NOT NULL AUTO_INCREMENT,
 //     `DeliveryPointId` BIGINT NOT NULL,
 //     `DeliveryPointNumber` VARCHAR(255) NULL,

@@ -127,9 +127,37 @@ namespace ApiOzon
                 state.Page++;
                 Console.WriteLine($"\nOZON: страница {state.Page} (cursor = {state.Cursor ?? "NULL"})");
 
-                object requestObject = string.IsNullOrWhiteSpace(state.Cursor) 
-                    ? new { type = new[] { "1" }, pagination = new { offset = 0, limit = 100 } }
-                    : new { type = new[] { "1" }, pagination = new { limit = 100, cursor = state.Cursor } };
+                object requestObject;
+
+                if (string.IsNullOrWhiteSpace(state.Cursor))
+                {
+                    requestObject = new
+                    {
+                        type = new[] { "1" },
+
+                        pagination = new
+                        {
+                            offset = 0,
+                            limit = 100
+                        }
+                    };
+                }
+                else
+                {
+                    requestObject = new
+                    {
+                        type = new[]
+                        {
+                            state.Page.ToString()
+                        },
+
+                        pagination = new
+                        {
+                            limit = 100,
+                            cursor = state.Cursor
+                        }
+                    };
+                }
 
                 var requestJson = JsonSerializer.Serialize(requestObject);
                 
