@@ -125,7 +125,7 @@ namespace ApiOzon
                 cancellationToken.ThrowIfCancellationRequested();
 
                 state.Page++;
-                Console.WriteLine($"\nOZON: страница {state.Page} (cursor = {state.Cursor ?? "NULL"})");
+                //Console.WriteLine($"\nOZON: страница {state.Page} (cursor = {state.Cursor ?? "NULL"})");
 
                 object requestObject;
 
@@ -164,6 +164,12 @@ namespace ApiOzon
                 // Делаем обычный сетевой вызов для получения списка ПВЗ
                 var listResponse = await PostToOzonAsync(client, "v1/delivery-point/list", requestJson, cancellationToken);
                 var listJson = await listResponse.Content.ReadAsStringAsync(cancellationToken);
+                
+
+                Console.WriteLine("ОТВЕТ НА ЗАПРОС v1/delivery-point/list");
+                Console.WriteLine("---------------------------------------------");
+                Console.WriteLine(listJson);
+                Console.WriteLine("---------------------------------------------");
 
                 if (!listResponse.IsSuccessStatusCode)
                 {
@@ -205,12 +211,17 @@ namespace ApiOzon
 
                 var infoData = JsonSerializer.Deserialize<DeliveryPointInfoResponse>(infoJson);
 
+                Console.WriteLine("ОТВЕТ НА ЗАПРОС v1/delivery-point/info");
+                Console.WriteLine("===========================================");
+                Console.WriteLine(infoData);
+                Console.WriteLine("===========================================");
+                
+
                 if (infoData == null)
                 {
                     Console.WriteLine("OZON: Информации о ПВЗ нет. Достигнут конец данных.");
                     return true; 
                 }
-
 
                 state.TotalReceived += listData.DeliveryPoints.Count;
 
