@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using ApiOzon;
 
 public class DeliveryPointListResponse
 {
@@ -7,6 +8,9 @@ public class DeliveryPointListResponse
 
     [JsonPropertyName("next_cursor")]
     public string? NextCursor { get; set; }
+
+    [JsonPropertyName("pagination")]
+    public PaginationInfo? Pagination { get; set; }
 }
 
 

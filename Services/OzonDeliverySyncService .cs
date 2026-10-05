@@ -120,77 +120,91 @@ namespace ApiOzon
         {
             var client = _httpClientFactory.CreateClient("OzonDeliveryClient");
 
+            // Фиксированный массив типов. Например, ["1"] — если нужны конкретные ПВЗ, 
+            // либо оставьте пустым/удалите, если Ozon по дефолту отдает всё.
+            var deliveryTypes = new[] { "1" }; 
+
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 state.Page++;
-                //Console.WriteLine($"\nOZON: страница {state.Page} (cursor = {state.Cursor ?? "NULL"})");
+                Console.WriteLine($"\nOZON: Запрос страницы {state.Page} (Текущий cursor: {state.Cursor ?? "NULL"})");
 
                 object requestObject;
 
+                // Если курсора нет — это самый первый запрос (первая страница)
                 if (string.IsNullOrWhiteSpace(state.Cursor))
                 {
                     requestObject = new
                     {
-                        type = new[] { "1" },
-
+                        type = deliveryTypes,
                         pagination = new
                         {
-                            offset = 0,
                             limit = 100
+                            // Поле offset при использовании cursor обычно не требуется или равно 0
                         }
                     };
                 }
                 else
                 {
+                    // Для последующих страниц передаем ТОТ ЖЕ тип, но добавляем сохраненный cursor
                     requestObject = new
                     {
-                        type = new[]
-                        {
-                            state.Page.ToString()
-                        },
-
+                        type = deliveryTypes,
                         pagination = new
                         {
                             limit = 100,
-                            cursor = state.Cursor
+                            cursor = state.Cursor 
                         }
                     };
                 }
 
                 var requestJson = JsonSerializer.Serialize(requestObject);
                 
-                // Делаем обычный сетевой вызов для получения списка ПВЗ
                 var listResponse = await PostToOzonAsync(client, "v1/delivery-point/list", requestJson, cancellationToken);
                 var listJson = await listResponse.Content.ReadAsStringAsync(cancellationToken);
                 
-
-                Console.WriteLine("ОТВЕТ НА ЗАПРОС v1/delivery-point/list");
-                Console.WriteLine("---------------------------------------------");
-                Console.WriteLine(listJson);
-                Console.WriteLine("---------------------------------------------");
-
                 if (!listResponse.IsSuccessStatusCode)
                 {
-                    // Падаем в catch внешнего метода, чтобы уйти на часовое ожидание
                     throw new Exception($"Ozon HTTP {(int)listResponse.StatusCode}: {listJson}"); 
                 }
 
                 var listData = JsonSerializer.Deserialize<DeliveryPointListResponse>(listJson);
                 if (listData == null) throw new Exception("Ozon LIST: пустой ответ.");
 
-                // Условие выхода — Озон вернул пустой список (данные кончились)
+                // Проверка на конец данных: если Ozon вернул 0 точек
                 if (listData.DeliveryPoints == null || listData.DeliveryPoints.Count == 0)
                 {
-                    Console.WriteLine("OZON: список ПВЗ пуст. Достигнут конец данных.");
+                    Console.WriteLine("OZON: Список ПВЗ пуст. Достигнут конец данных.");
+                    state.Cursor = null; // Сбрасываем курсор для будущего нового перезапуска синхронизации через сутки
+                    state.Page = 0;
                     return true; 
                 }
 
-                // ==========================================
-                // 2. Получаем ID ПВЗ
-                // ==========================================
+                // КРИТИЧЕСКИ ВАЖНО: Сохраняем курсор для СЛЕДУЮЩЕГО шага цикла
+                // Класс DeliveryPointListResponse должен содержать поле или объект пагинации, откуда берется следующий курсор
+                // (Обычно это структура вида listData.Pagination.Cursor или listData.Cursor)
+                var nextCursor = listData.Pagination?.Cursor; 
 
+                // Проверяем, изменился ли курсор. Если Ozon вернул тот же самый курсор, 
+                // или прислал пустой/null — значит, это была последняя страница.
+                if (string.IsNullOrWhiteSpace(nextCursor) || nextCursor == state.Cursor)
+                {
+                    Console.WriteLine("OZON: Получен пустой или дублирующийся курсор. Конец данных.");
+                    state.Cursor = null;
+                    state.Page = 0;
+                    return true;
+                }
+
+                // Обновляем курсор в состоянии (и сохраняем в БД, чтобы в случае падения сети продолжить с него)
+                state.Cursor = nextCursor;
+                _db.OzonDeliverySyncStates.Update(state);
+                await _db.SaveChangesAsync(cancellationToken);
+
+                // ==========================================
+                // 2. Получаем ID ПВЗ и обрабатываем их дальше...
+                // ==========================================
                 var deliveryPointIds = listData
                     .DeliveryPoints
                     .Select(x => x.DeliveryPointId)
