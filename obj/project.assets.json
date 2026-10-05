@@ -2789,25 +2789,24 @@
     ]
   },
   "packageFolders": {
-    "/home/gubinvs/.nuget/packages/": {}
+    "/Users/vladimirgubin/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/gubinvs/ENCOMPONENT/ApiOzon/ApiOzon.csproj",
+      "projectUniqueName": "/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/ApiOzon.csproj",
       "projectName": "ApiOzon",
-      "projectPath": "/home/gubinvs/ENCOMPONENT/ApiOzon/ApiOzon.csproj",
-      "packagesPath": "/home/gubinvs/.nuget/packages/",
-      "outputPath": "/home/gubinvs/ENCOMPONENT/ApiOzon/obj/",
+      "projectPath": "/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/ApiOzon.csproj",
+      "packagesPath": "/Users/vladimirgubin/.nuget/packages/",
+      "outputPath": "/Users/vladimirgubin/Documents/07 WEB-DEVELOPER/MICRO_SERVICES/ApiOzon/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/home/gubinvs/.nuget/NuGet/NuGet.Config"
+        "/Users/vladimirgubin/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
-        "/usr/lib/dotnet/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -2878,7 +2877,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/9.0.116/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.101/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
