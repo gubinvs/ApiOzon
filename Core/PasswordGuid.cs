@@ -1,6 +1,6 @@
 
 
-namespace ApiOzon
+namespace ApiOzon.Core
 {
     public class PasswordGuid
     {

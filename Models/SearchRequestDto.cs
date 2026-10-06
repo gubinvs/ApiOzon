@@ -1,9 +1,6 @@
 
 
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-
-namespace ApiOzon
+namespace ApiOzon.Models
 {
     public class SearchRequestDto
     {

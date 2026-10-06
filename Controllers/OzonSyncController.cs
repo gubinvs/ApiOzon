@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ApiOzon.Services;
-using ApiOzon;
+using ApiOzon.Core;
 using Microsoft.Extensions.Options;
 
 namespace ApiOzon.Controllers

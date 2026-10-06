@@ -1,5 +1,5 @@
 
-namespace ApiOzon
+namespace ApiOzon.Core
 {
     public class YandexGeocoderParam
     {

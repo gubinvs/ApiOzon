@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
+using ApiOzon.Models;
 
 namespace ApiOzon.Controllers
 {

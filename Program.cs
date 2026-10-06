@@ -1,5 +1,7 @@
 using ApiOzon;
 using ApiOzon.Services;
+using ApiOzon.Core;
+using ApiOzon.Models;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

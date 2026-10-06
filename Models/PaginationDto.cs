@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace ApiOzon.DTOs // или укажите вашу рабочую папку для DTO
+namespace ApiOzon.Models
 {
     public class PaginationDto
     {

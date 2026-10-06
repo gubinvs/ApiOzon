@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
+using ApiOzon.Core;
 
 namespace ApiOzon.Services
 {

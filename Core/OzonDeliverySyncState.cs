@@ -1,7 +1,6 @@
 
-namespace ApiOzon
+namespace ApiOzon.Core
 {
-
     public class OzonDeliverySyncState
     {
         public int Id { get; set; }

@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using System.Text.Json;
+using ApiOzon.Core;
+using ApiOzon.Models;
 
 namespace ApiOzon
 {

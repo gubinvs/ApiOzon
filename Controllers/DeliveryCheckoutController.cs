@@ -1,7 +1,7 @@
 using ApiOzon.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ApiOzon
+namespace ApiOzon.Controllers
 {
     [ApiController]
     [Route("v1/[controller]")]

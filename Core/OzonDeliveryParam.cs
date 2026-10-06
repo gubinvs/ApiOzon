@@ -1,6 +1,5 @@
-using System.Text.Json.Serialization;
 
-namespace ApiOzon
+namespace ApiOzon.Core
 {
     public class OzonDeliveryParam
     {

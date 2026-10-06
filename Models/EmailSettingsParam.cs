@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 
 
-namespace ApiOzon
+namespace ApiOzon.Models
 {
     public class EmailSettingsParam
     {

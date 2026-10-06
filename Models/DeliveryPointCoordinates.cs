@@ -1,10 +1,13 @@
 using System.Text.Json.Serialization;
 
-public class DeliveryPointCoordinates
+namespace ApiOzon.Models
 {
-    [JsonPropertyName("latitude")]
-    public double Latitude { get; set; }
+    public class DeliveryPointCoordinates
+    {
+        [JsonPropertyName("latitude")]
+        public double Latitude { get; set; }
 
-    [JsonPropertyName("longitude")]
-    public double Longitude { get; set; }
+        [JsonPropertyName("longitude")]
+        public double Longitude { get; set; }
+    }
 }

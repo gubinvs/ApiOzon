@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using ApiOzon.Models;
+using ApiOzon.Core;
 
 namespace ApiOzon
 {
