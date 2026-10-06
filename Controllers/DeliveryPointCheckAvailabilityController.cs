@@ -10,13 +10,24 @@ namespace ApiOzon.Controllers
     [Route("v1/[controller]")]
     public class DeliveryPointCheckAvailabilityController : ControllerBase
     {
+
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public DeliveryPointCheckAvailabilityController (
+            IHttpClientFactory httpClientFactory
+        )
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+        
         [HttpPost]
         public IActionResult PointCheck ([FromBody] DeliveryPointCheckAvailabilityReguest reguest)
         {
+
+            var client = _httpClientFactory.CreateClient("OzonDeliveryClient");
             
 
             return Ok();
         }
-        
     }
 }
