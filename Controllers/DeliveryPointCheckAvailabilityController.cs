@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ApiOzon.Models;
+using System.Threading.Tasks;
 
 namespace ApiOzon.Controllers
 {
@@ -21,13 +22,15 @@ namespace ApiOzon.Controllers
         }
         
         [HttpPost]
-        public IActionResult PointCheck ([FromBody] DeliveryPointCheckAvailabilityReguest reguest)
+        public async Task<IActionResult> PointCheck ([FromBody] DeliveryPointCheckAvailabilityReguest reguest)
         {
 
-            var client = _httpClientFactory.CreateClient("OzonDeliveryClient");
-            
+            var client =  _httpClientFactory.CreateClient("OzonDeliveryClient");
 
-            return Ok();
+            var reguestResult = await client.PostAsJsonAsync("/v1/delivery-point/check-availability", reguest);
+            var reguestResultJson = await reguestResult.Content.ReadAsStringAsync();
+
+            return Ok(reguestResultJson);
         }
     }
 }

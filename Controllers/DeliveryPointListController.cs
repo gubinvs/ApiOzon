@@ -21,16 +21,13 @@ namespace ApiOzon.Controllers
         public async Task<IActionResult> GetDeliveryPoints(
             [FromBody] DeliveryPointListRequest request)
         {
-            var client = _httpClientFactory
-                .CreateClient("OzonDeliveryClient");
+            var client = _httpClientFactory.CreateClient("OzonDeliveryClient");
 
             // ==========================================
             // 1. Получаем список ПВЗ
             // ==========================================
 
-            var listResponse = await client.PostAsJsonAsync(
-                "v1/delivery-point/list",
-                request);
+            var listResponse = await client.PostAsJsonAsync("v1/delivery-point/list", request);
 
             var listJson = await listResponse.Content.ReadAsStringAsync();
 
