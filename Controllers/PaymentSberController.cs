@@ -1,15 +1,9 @@
-using Microsoft.AspNetCore.Mvc;
-<<<<<<< HEAD
-using ApiOzon.Models;
-using System.Text.Json;
-using Microsoft.Extensions.Logging;
-=======
+
 using Microsoft.Extensions.Caching.Memory;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
->>>>>>> 6dca8e601affc9cfa6a0738a4e4baecb4032d9db
 using ApiOzon.Core;
 
 namespace ApiOzon.Controllers
@@ -18,7 +12,6 @@ namespace ApiOzon.Controllers
     [Route("v1/[controller]")]
     public class PaymentSberController : ControllerBase
     {
-<<<<<<< HEAD
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<PaymentSberController> _logger;
@@ -931,4 +924,3 @@ namespace ApiOzon.Controllers
         public string? Scope { get; set; }
     }
 }
->>>>>>> 6dca8e601affc9cfa6a0738a4e4baecb4032d9db
