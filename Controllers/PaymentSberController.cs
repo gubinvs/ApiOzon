@@ -1,73 +1,107 @@
 using Microsoft.AspNetCore.Mvc;
-using ApiOzon.Core;
 using ApiOzon.Models;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using ApiOzon.Core;
 
 namespace ApiOzon.Controllers
 {
     [ApiController]
-    [Route("api/payment")]
+    [Route("v1/[controller]")]
     public class PaymentSberController : ControllerBase
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly ILogger<PaymentSberController> _logger;
 
-        // Рекомендуется регистрировать HttpClient через AddHttpClient() в Program.cs
-        public PaymentSberController(HttpClient httpClient, IConfiguration configuration)
+        public PaymentSberController(
+            IHttpClientFactory httpClientFactory, // Внедряем фабрику вместо прямого HttpClient
+            IConfiguration configuration, 
+            ILogger<PaymentSberController> logger)
         {
-            _httpClient = httpClient;
+            // Извлекаем именно тот клиент, который умеет работать с папкой Certificates
+            _httpClient = httpClientFactory.CreateClient("SberbankClient");
             _configuration = configuration;
+            _logger = logger;
         }
 
-        [HttpPost("register")]
+        [HttpPost]
         public async Task<IActionResult> RegisterPayment([FromBody] PaymentSberRequestDto request)
         {
             try
             {
-                // 1. Берем креды из конфигурации (appsettings.json)
-                var userName = _configuration["Sberbank:UserName"] ?? "ваш_логин-api";
-                var password = _configuration["Sberbank:Password"] ?? "ваш_пароль";
+                // 1. Извлекаем конфигурацию
+                var userName = _configuration["Sberbank:UserName"];
+                var password = _configuration["Sberbank:Password"];
+                var baseUrl = _configuration["Sberbank:BaseUrl"];
+                var returnUrl = _configuration["Sberbank:ReturnUrl"] ?? "https://localhost:5001/payment/success";
+                var failUrl = _configuration["Sberbank:FailUrl"] ?? "https://localhost:5001/payment/fail";
 
-                // Сбер принимает сумму строго в копейках (например, 150.50 руб -> 15050 копеек)
+                if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(baseUrl))
+                {
+                    _logger.LogError("Критические настройки Сбербанка отсутствуют в конфигурации.");
+                    return StatusCode(500, new { message = "Ошибка конфигурации платежного шлюза" });
+                }
+
+                // Сумма в копейках с округлением
                 long amountInKopecks = (long)Math.Round(request.Amount * 100);
                 string orderNumber = $"INV-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
 
-                // 2. Формируем тело запроса для Сбера
+                // 2. Формируем x-www-form-urlencoded параметры
                 var sberParams = new Dictionary<string, string>
                 {
                     { "userName", userName },
                     { "password", password },
                     { "orderNumber", orderNumber },
                     { "amount", amountInKopecks.ToString() },
-                    { "currency", "643" }, // Код рубля РФ
-                    { "returnUrl", "https://вашсайт.ру/payment/success" },
-                    { "failUrl", "https://вашсайт.ру/payment/fail" }
+                    { "currency", "643" }, 
+                    { "returnUrl", returnUrl },
+                    { "failUrl", failUrl }
                 };
 
-                // Отправляем как x-www-form-urlencoded (базовый стандарт Сбера)
-                var content = new FormUrlEncodedContent(sberParams);
+                using var content = new FormUrlEncodedContent(sberParams);
                 
-                // Тестовый шлюз. Для продакшена смените на https://paygate.ru
-                var sberUrl = "https://sberbank.ru";
+                // Полный URL метода регистрации заказа в Сбере (обычно это register.do)
+               var requestUrl = $"{baseUrl.TrimEnd('/')}/register.do";  
                 
-                var response = await _httpClient.PostAsync(sberUrl, content);
-                var responseString = await response.Content.ReadAsStringAsync();
+                // 3. Выполняем запрос
+                var response = await _httpClient.PostAsync(requestUrl, content);
                 
-                var sberResult = JsonSerializer.Deserialize<SberRegisterResponse>(responseString);
-
-                if (sberResult != null && !string.IsNullOrEmpty(sberResult.FormUrl))
+                // Проверяем сетевую успешность (200 OK)
+                if (!response.IsSuccessStatusCode)
                 {
-                    // ТУТ ВАЖНО: Сохрани sberResult.OrderId в свою БД к этому заказу!
-                    // Он понадобится, чтобы проверить, дошли ли деньги, когда юзер вернется.
-
-                    return Ok(new { formUrl = sberResult.FormUrl });
+                    _logger.LogError("Сбербанк вернул сетевую ошибку: {StatusCode}", response.StatusCode);
+                    return StatusCode(502, new { message = "Платежный шлюз временно недоступен" });
                 }
 
-                return BadRequest(new { message = sberResult?.ErrorMessage ?? "Ошибка при регистрации в Сбербанке" });
+                var responseString = await response.Content.ReadAsStringAsync();
+                
+                // Обязательно настраиваем CamelCase для десериализации ответа Сбера
+                var deserializeOptions = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+                
+                var sberResult = JsonSerializer.Deserialize<SberRegisterResponse>(responseString, deserializeOptions);
+
+                // 4. Анализируем бизнес-логику ответа
+                if (sberResult != null && !string.IsNullOrEmpty(sberResult.FormUrl))
+                {
+                    // TODO: Сохраните sberResult.OrderId и orderNumber в вашу БД к текущему заказу!
+                    _logger.LogInformation("Заказ {OrderNumber} успешно зарегистрирован в Сбере. OrderId: {SberOrderId}", orderNumber, sberResult.OrderId);
+
+                    return Ok(new { formUrl = sberResult.FormUrl, orderId = sberResult.OrderId });
+                }
+
+                // Обработка бизнес-ошибки Сбера (например, неверные креды или дубликат orderNumber)
+                _logger.LogWarning("Ошибка регистрации платежа Сбера: {ErrCode} - {ErrMessage}", sberResult?.ErrorCode, sberResult?.ErrorMessage);
+                return BadRequest(new { message = sberResult?.ErrorMessage ?? "Ошибка при регистрации платежа в банке" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Внутренняя ошибка сервера", details = ex.Message });
+                // Логируем исключение, не раскрывая стек вызовов клиенту
+                _logger.LogError(ex, "Критическая ошибка при регистрации платежа Сбербанка");
+                return StatusCode(500, new { message = "Внутренняя ошибка сервера при обработке платежа" });
             }
         }
     }

@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 
-
 namespace ApiOzon.Models
 {
     public class SberRegisterResponse
@@ -14,7 +13,8 @@ namespace ApiOzon.Models
         [JsonPropertyName("errorMessage")]
         public string ErrorMessage { get; set; } = string.Empty;
         
+        // Изменено на int?, так как Сбербанк возвращает числовой код ошибки
         [JsonPropertyName("errorCode")]
-        public string ErrorCode { get; set; } = string.Empty;
+        public int? ErrorCode { get; set; }
     }
 }
