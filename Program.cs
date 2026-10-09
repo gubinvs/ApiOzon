@@ -1,29 +1,9 @@
-
 using ApiOzon;
-using ApiOzon.Services;
 using ApiOzon.Core;
 using ApiOzon.Models;
+using ApiOzon.Services;
 using Microsoft.EntityFrameworkCore;
-<<<<<<< HEAD
-using ApiOzon.Controllers;
-using System.Net.Http;
-using System.Security.Cryptography.X509Certificates;
-using System.Net.Security;
-using System.IO;
-using System.Linq;
-
-var builder = WebApplication.CreateBuilder(args);
-
-// 1. Конфигурация для подключения данных из appsettings.json
-builder.Services.Configure<OzonSellerParam>(builder.Configuration.GetSection("OzonSeller"));
-builder.Services.Configure<OzonDeliveryParam>(builder.Configuration.GetSection("OzonDelivery"));
-builder.Services.Configure<PasswordGuid>(builder.Configuration.GetSection("PasswordGuid"));
-builder.Services.Configure<EmailSettingsParam>(builder.Configuration.GetSection("EmailSettings"));
-builder.Services.Configure<YandexGeocoderParam>(builder.Configuration.GetSection("YandexGeocoder"));
-=======
-using System.Net.Http.Headers;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,120 +25,30 @@ builder.Services.Configure<EmailSettingsParam>(
 
 builder.Services.Configure<YandexGeocoderParam>(
     builder.Configuration.GetSection("YandexGeocoder"));
->>>>>>> 6dca8e601affc9cfa6a0738a4e4baecb4032d9db
 
 // ============================================================
 // 2. БАЗОВЫЕ СЕРВИСЫ
 // ============================================================
 
 builder.Services.AddControllers();
-
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddSwaggerGen();
-
-<<<<<<< HEAD
-// Заменили обычный AddHttpClient() на именованный клиент для Сбербанка с поддержкой сертификатов Минцифры
-builder.Services.AddHttpClient("SberbankClient")
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-
-        handler.ServerCertificateCustomValidationCallback = (requestMessage, certificate, chain, sslErrors) =>
-        {
-            // Если ОС (например, Яндекс.Браузер на машине или общие настройки) доверяет сертификату — пропускаем
-            if (sslErrors == SslPolicyErrors.None)
-                return true;
-
-            if (certificate == null || chain == null)
-                return false;
-
-            // Ищем папку Certificates в корне выполнения приложения
-            var certsFolder = Path.Combine(AppContext.BaseDirectory, "Certificates");
-            if (!Directory.Exists(certsFolder))
-                certsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Certificates");
-
-            if (Directory.Exists(certsFolder))
-            {
-                var certFiles = Directory.GetFiles(certsFolder, "*.*")
-                    .Where(f => f.EndsWith(".cer") || f.EndsWith(".crt") || f.EndsWith(".pem"));
-
-                foreach (var file in certFiles)
-                {
-                    try
-                    {
-                        // Безопасно загружаем локальный сертификат Минцифры (.NET 9)
-                        using var localCert = X509CertificateLoader.LoadCertificateFromFile(file);
-                        
-                        // Прямое сопоставление: ищем, совпадает ли отпечаток нашего файла с элементами в цепочке Сбера
-                        foreach (var chainElement in chain.ChainElements)
-                        {
-                            if (chainElement.Certificate.Thumbprint.Equals(localCert.Thumbprint, StringComparison.OrdinalIgnoreCase))
-                            {
-                                return true; // Нашли корневой или промежуточный сертификат Минцифры — доверяем!
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        // Игнорируем ошибки чтения отдельных битых файлов
-                    }
-                }
-            }
-
-            return false;
-        };
-
-        return handler;
-    });
-
-builder.Services.AddTransient<OzonDeliveryAuthHandler>(); 
-// Регистрируем триггер как Singleton
-builder.Services.AddSingleton<OzonSyncTrigger>();
-
-// Регистрируем фоновые воркеры
-=======
-builder.Services.AddHttpClient();
+builder.Services.AddMemoryCache();
 
 // ============================================================
-// 3. СЕРВИСЫ OZON DELIVERY
+// 3. СЕРВИСЫ OZON
 // ============================================================
 
 builder.Services.AddTransient<OzonDeliveryAuthHandler>();
-
-builder.Services.AddSingleton<OzonSyncTrigger>();
-
->>>>>>> 6dca8e601affc9cfa6a0738a4e4baecb4032d9db
-builder.Services.AddHostedService<OzonDeliverySyncWorker>();
-
-<<<<<<< HEAD
-// 3. Регистрация кастомных бизнес-сервисов
-builder.Services.AddScoped<IOzonStockService, OzonStockService>();
-
-// Сервис авторизации должен быть СТРОГО один (AddSingleton)
-=======
-builder.Services.AddScoped<OzonDeliverySyncService>();
-
-builder.Services.AddScoped<IOzonStockService, OzonStockService>();
-
->>>>>>> 6dca8e601affc9cfa6a0738a4e4baecb4032d9db
-builder.Services.AddSingleton<IOzonAuthService, OzonAuthService>();
-
 builder.Services.AddTransient<OzonAuthHandler>();
 
-<<<<<<< HEAD
-// 4. Регистрируем готовый HttpClient для работы с API Доставки Ozon
-builder.Services.AddHttpClient("OzonDeliveryClient", (serviceProvider, client) =>
-{
-    var config = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<OzonDeliveryParam>>().Value;
-    client.BaseAddress = new System.Uri($"https://{config.host}/");
-})
-.AddHttpMessageHandler<OzonAuthHandler>();
+builder.Services.AddSingleton<OzonSyncTrigger>();
+builder.Services.AddSingleton<IOzonAuthService, OzonAuthService>();
 
-// 5. Подключение к базе данных интернет-магазина
-var shopConnectionString = builder.Configuration["ConnectionDataShop:ConnectionDataString"];
-=======
-builder.Services.AddMemoryCache();
+builder.Services.AddScoped<OzonDeliverySyncService>();
+builder.Services.AddScoped<IOzonStockService, OzonStockService>();
+
+builder.Services.AddHostedService<OzonDeliverySyncWorker>();
 
 // ============================================================
 // 4. HTTP CLIENT OZON DELIVERY
@@ -169,38 +59,34 @@ builder.Services.AddHttpClient(
     (serviceProvider, client) =>
     {
         var config = serviceProvider
-            .GetRequiredService<
-                Microsoft.Extensions.Options.IOptions<OzonDeliveryParam>>()
+            .GetRequiredService<IOptions<OzonDeliveryParam>>()
             .Value;
 
-        client.BaseAddress = new Uri(
-            $"https://{config.host}/");
+        client.BaseAddress = new Uri($"https://{config.host}/");
     })
     .AddHttpMessageHandler<OzonAuthHandler>();
 
 // ============================================================
-// 5. ПОДКЛЮЧЕНИЕ К БАЗЕ ДАННЫХ SHOP
+// 5. MYSQL
 // ============================================================
 
 var shopConnectionString =
     builder.Configuration[
         "ConnectionDataShop:ConnectionDataString"];
 
->>>>>>> 6dca8e601affc9cfa6a0738a4e4baecb4032d9db
-if (string.IsNullOrEmpty(shopConnectionString))
+if (string.IsNullOrWhiteSpace(shopConnectionString))
 {
-    throw new Exception(
-        "Критическая ошибка: Строка подключения " +
-        "ConnectionDataString не найдена в конфигурации!");
+    throw new InvalidOperationException(
+        "Не найдена строка подключения " +
+        "ConnectionDataShop:ConnectionDataString.");
 }
 
-builder.Services.AddDbContext<ShopDbContext>(
-    options =>
-    {
-        options.UseMySql(
-            shopConnectionString,
-            ServerVersion.AutoDetect(shopConnectionString));
-    });
+builder.Services.AddDbContext<ShopDbContext>(options =>
+{
+    options.UseMySql(
+        shopConnectionString,
+        ServerVersion.AutoDetect(shopConnectionString));
+});
 
 // ============================================================
 // 6. CORS
@@ -208,289 +94,42 @@ builder.Services.AddDbContext<ShopDbContext>(
 
 builder.Services.AddCors(options =>
 {
-<<<<<<< HEAD
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyHeader()
-              .AllowAnyMethod()
-              .SetIsOriginAllowed(_ => true);
+        policy
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .SetIsOriginAllowed(_ => true);
     });
-=======
-    options.AddPolicy(
-        "AllowAll",
-        policy =>
-        {
-            policy.AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .SetIsOriginAllowed(_ => true);
-        });
->>>>>>> 6dca8e601affc9cfa6a0738a4e4baecb4032d9db
 });
 
 // ============================================================
-// 7. СЕРТИФИКАТ СБЕРА
+// 7. HTTP CLIENT ОБЫЧНОГО ИНТЕРНЕТ-ЭКВАЙРИНГА СБЕРА
 // ============================================================
 
-// ------------------------------------------------------------
-// Клиентский сертификат Sber Business API
-// ------------------------------------------------------------
+// Используется PaymentSberController для register.do.
+// Клиентский сертификат СберБизнеса здесь не подключается.
 
-var certificatePath = Path.Combine(
-    builder.Environment.ContentRootPath,
-    "SBBAPI_92418_bdc59fc8-db9a-4dd6-b1e2-6da4a202e772.p12");
-
-if (!File.Exists(certificatePath))
-{
-    throw new FileNotFoundException(
-        $"Сертификат Сбера не найден: {certificatePath}");
-}
-
-// ------------------------------------------------------------
-// Настройки Sberbank из appsettings.json
-// ------------------------------------------------------------
-
-var sberBaseUrl =
-    builder.Configuration["Sberbank:BaseUrl"];
-
-var certificatePassword =
-    builder.Configuration["Sberbank:CertificatePassword"];
-
-if (string.IsNullOrWhiteSpace(sberBaseUrl))
-{
-    throw new Exception(
-        "Критическая ошибка: Sberbank:BaseUrl " +
-        "не найден в appsettings.json!");
-}
-
-if (string.IsNullOrWhiteSpace(certificatePassword))
-{
-    throw new Exception(
-        "Критическая ошибка: Sberbank:CertificatePassword " +
-        "не найден в appsettings.json!");
-}
-
-// ------------------------------------------------------------
-// Загружаем PKCS#12 сертификат
-// ------------------------------------------------------------
-
-var sberCertificate =
-    X509CertificateLoader.LoadPkcs12FromFile(
-        certificatePath,
-        certificatePassword,
-        X509KeyStorageFlags.MachineKeySet);
-
-// ------------------------------------------------------------
-// Проверяем наличие закрытого ключа
-// ------------------------------------------------------------
-
-if (!sberCertificate.HasPrivateKey)
-{
-    throw new Exception(
-        "Критическая ошибка: сертификат Сбера " +
-        "не содержит закрытого ключа!");
-}
+builder.Services.AddHttpClient("SberbankClient");
 
 // ============================================================
-// 8. СЕРТИФИКАТЫ ЦЕПОЧКИ СБЕРА
-// ============================================================
-
-// ------------------------------------------------------------
-// Корневой сертификат SberCA Root Ext
-//
-// Файл:
-// prom-certs/sberca-root-ext.crt
-// ------------------------------------------------------------
-
-var sberRootCaPath = Path.Combine(
-    builder.Environment.ContentRootPath,
-    "prom-certs",
-    "sberca-root-ext.crt");
-
-if (!File.Exists(sberRootCaPath))
-{
-    throw new FileNotFoundException(
-        $"Корневой сертификат Сбера не найден: {sberRootCaPath}");
-}
-
-var sberRootCaCertificate =
-    X509CertificateLoader.LoadCertificateFromFile(
-        sberRootCaPath);
-
-// ------------------------------------------------------------
-// Промежуточный сертификат SberCA Ext
-//
-// Файл:
-// prom-certs/sberca-ext.crt
-// ------------------------------------------------------------
-
-var sberIntermediatePath = Path.Combine(
-    builder.Environment.ContentRootPath,
-    "prom-certs",
-    "sberca-ext.crt");
-
-if (!File.Exists(sberIntermediatePath))
-{
-    throw new FileNotFoundException(
-        $"Промежуточный сертификат Сбера не найден: {sberIntermediatePath}");
-}
-
-var sberIntermediateCertificate =
-    X509CertificateLoader.LoadCertificateFromFile(
-        sberIntermediatePath);
-
-// ============================================================
-// 9. HTTP CLIENT SBER BUSINESS API
-// ============================================================
-
-builder.Services.AddHttpClient(
-    "SberBusinessClient",
-    client =>
-    {
-        client.BaseAddress = new Uri(
-            sberBaseUrl.TrimEnd('/') + "/");
-
-        client.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue(
-                "application/json"));
-    })
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-
-        // ----------------------------------------------------
-        // Клиентский сертификат
-        // ----------------------------------------------------
-
-        handler.ClientCertificates.Add(
-            sberCertificate);
-
-        // ----------------------------------------------------
-        // Проверка сертификата сервера
-        // ----------------------------------------------------
-
-  handler.ServerCertificateCustomValidationCallback =
-    (request, certificate, chain, sslPolicyErrors) =>
-    {
-        if (certificate == null)
-        {
-            return false;
-        }
-
-        // ----------------------------------------------------
-        // Сертификат сервера
-        // ----------------------------------------------------
-
-        var serverCertificate =
-            new X509Certificate2(certificate);
-
-        // ----------------------------------------------------
-        // Строим собственную доверенную цепочку Sberbank
-        //
-        // fintech-test.sberbank.ru
-        //          ↓
-        //      SberCA Ext
-        //          ↓
-        //    SberCA Root Ext
-        // ----------------------------------------------------
-
-        using var customChain = new X509Chain();
-
-        customChain.ChainPolicy.TrustMode =
-            X509ChainTrustMode.CustomRootTrust;
-
-        customChain.ChainPolicy.CustomTrustStore.Add(
-            sberRootCaCertificate);
-
-        customChain.ChainPolicy.ExtraStore.Add(
-            sberIntermediateCertificate);
-
-        customChain.ChainPolicy.RevocationMode =
-            X509RevocationMode.NoCheck;
-
-        customChain.ChainPolicy.VerificationFlags =
-            X509VerificationFlags.NoFlag;
-
-        var chainValid =
-            customChain.Build(serverCertificate);
-
-        if (!chainValid)
-        {
-            Console.WriteLine(
-                "Sberbank server certificate chain is invalid.");
-
-            foreach (var status in customChain.ChainStatus)
-            {
-                Console.WriteLine(
-                    $"{status.Status}: {status.StatusInformation}");
-            }
-
-            return false;
-        }
-
-        // ----------------------------------------------------
-        // Проверяем имя сервера.
-        //
-        // Не используем RemoteCertificateNameMismatch,
-        // поскольку системная проверка macOS/.NET не знает
-        // наш приватный SberCA и в данном случае возвращает
-        // ложную ошибку.
-        //
-        // Получаем DNS-имя сертификата и сравниваем его
-        // с фактическим host запроса.
-        // ----------------------------------------------------
-
-        var certificateDnsName =
-            serverCertificate.GetNameInfo(
-                X509NameType.DnsName,
-                false);
-
-        var requestHost =
-            request.RequestUri?.Host;
-
-        var nameValid =
-            !string.IsNullOrWhiteSpace(certificateDnsName) &&
-            !string.IsNullOrWhiteSpace(requestHost) &&
-            string.Equals(
-                certificateDnsName,
-                requestHost,
-                StringComparison.OrdinalIgnoreCase);
-
-        Console.WriteLine(
-            $"Sber certificate DNS name: {certificateDnsName}");
-
-        Console.WriteLine(
-            $"Sber request host: {requestHost}");
-
-        Console.WriteLine(
-            $"Sber certificate chain valid: {chainValid}");
-
-        Console.WriteLine(
-            $"Sber certificate name valid: {nameValid}");
-
-        return chainValid && nameValid;
-    };
-        return handler;
-    });
-
-// ============================================================
-// 10. СОЗДАНИЕ APPLICATION
+// 8. СОЗДАНИЕ ПРИЛОЖЕНИЯ
 // ============================================================
 
 var app = builder.Build();
 
 // ============================================================
-// 11. SWAGGER
+// 9. SWAGGER
 // ============================================================
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-
     app.UseSwaggerUI();
 }
 
 // ============================================================
-// 12. HTTP PIPELINE
+// 10. HTTP PIPELINE
 // ============================================================
 
 app.UseRouting();
