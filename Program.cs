@@ -1,4 +1,5 @@
 using ApiOzon;
+using ApiOzon.Controllers;
 using ApiOzon.Core;
 using ApiOzon.Models;
 using ApiOzon.Services;
@@ -107,10 +108,8 @@ builder.Services.AddCors(options =>
 // 7. HTTP CLIENT ОБЫЧНОГО ИНТЕРНЕТ-ЭКВАЙРИНГА СБЕРА
 // ============================================================
 
-// Используется PaymentSberController для register.do.
-// Клиентский сертификат СберБизнеса здесь не подключается.
+builder.Services.AddHttpClient<OzonPayController>();
 
-builder.Services.AddHttpClient("SberbankClient");
 
 // ============================================================
 // 8. СОЗДАНИЕ ПРИЛОЖЕНИЯ
