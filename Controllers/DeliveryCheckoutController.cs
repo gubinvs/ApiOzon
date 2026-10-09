@@ -16,18 +16,13 @@ namespace ApiOzon.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Checkout(
-            [FromBody] DeliveryCheckoutRequest request)
+        public async Task<IActionResult> Checkout([FromBody] DeliveryCheckoutRequest request)
         {
-            var client = _httpClientFactory
-                .CreateClient("OzonDeliveryClient");
+            var client = _httpClientFactory.CreateClient("OzonDeliveryClient");
 
-            var response = await client.PostAsJsonAsync(
-                "v1/order/checkout",
-                request);
+            var response = await client.PostAsJsonAsync("v1/order/checkout",request);
 
-            var result = await response.Content
-                .ReadAsStringAsync();
+            var result = await response.Content.ReadAsStringAsync();
 
             return new ContentResult
             {
