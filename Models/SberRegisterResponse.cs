@@ -1,20 +1,18 @@
 using System.Text.Json.Serialization;
 
-namespace ApiOzon.Models
+namespace ApiOzon.Core;
+
+public class SberRegisterResponse
 {
-    public class SberRegisterResponse
-    {
-        [JsonPropertyName("orderId")]
-        public string OrderId { get; set; } = string.Empty;
+    [JsonPropertyName("orderId")]
+    public string? OrderId { get; set; }
 
-        [JsonPropertyName("formUrl")]
-        public string FormUrl { get; set; } = string.Empty;
+    [JsonPropertyName("formUrl")]
+    public string? FormUrl { get; set; }
 
-        [JsonPropertyName("errorMessage")]
-        public string ErrorMessage { get; set; } = string.Empty;
-        
-        // Изменено на int?, так как Сбербанк возвращает числовой код ошибки
-        [JsonPropertyName("errorCode")]
-        public int? ErrorCode { get; set; }
-    }
+    [JsonPropertyName("errorCode")]
+    public string? ErrorCode { get; set; }
+
+    [JsonPropertyName("errorMessage")]
+    public string? ErrorMessage { get; set; }
 }
