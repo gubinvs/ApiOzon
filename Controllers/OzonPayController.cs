@@ -1,4 +1,6 @@
 using ApiOzon.Models;
+using ApiOzon.Core;
+using ApiOzon.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
@@ -36,85 +38,70 @@ namespace ApiOzon.Controllers
         [HttpPost("create")]
         public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentOzonRequest request)
         {
-            // Валидация входных данных
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            // Проверка переменной конфигурации (в appsettings.json: "OzonPay:UseMock": true)
-            bool useMock = _configuration.GetValue<bool>("OzonPay:UseMock");
+            var returnUrl = $"{Request.Scheme}://{Request.Host}/payment-result?order={request.OrderId}";
 
-            if (useMock)
-            {
-                return await CreatePaymentMock(request);
-            }
-            else
-            {
-                return await CreatePaymentReal(request);
-            }
-        }
-
-        /// <summary>
-        /// Тестовый режим: имитирует ответ Ozon без внешних запросов.
-        /// </summary>
-        private async Task<IActionResult> CreatePaymentMock(CreatePaymentOzonRequest request)
-        {
-            await Task.Delay(_networkLatency); // Имитация сетевого лага
-
-            var mockPaymentId = Guid.NewGuid().ToString();
-            var mockPaymentUrl = $"http://localhost:5148/pay?paymentId={mockPaymentId}";
-
-            var response = new OzonPaymentResponse(
-                PaymentId: mockPaymentId,
-                PaymentUrl: mockPaymentUrl,
-                Status: OzonPaymentStatus.CREATED
+            var ozonRequest = new OzonCreatePaymentRequest(
+                OrderNumber: request.OrderId,
+                AmountInKopecks: (int)(request.Amount * 100),
+                Description: request.Description,
+                CustomerEmail: request.CustomerEmail,
+                ReturnUrl: returnUrl,
+                Receipt: new OzonReceipt(
+                    CustomerEmail: request.CustomerEmail,
+                    Items: new List<OzonReceiptItem>
+                    {
+                        new(
+                            Description: request.Description ?? "Оплата заказа",
+                            Quantity: 1,
+                            AmountInKopecks: (int)(request.Amount * 100),
+                            VatCode: 2
+                        )
+                    }
+                )
             );
 
-            return Ok(new { paymentUrl = response.PaymentUrl, paymentId = response.PaymentId });
-        }
+            var jsonPayload = JsonSerializer.Serialize(ozonRequest, new JsonSerializerOptions
+            {
+                // Ozon Acquiring чувствителен к пробелам и порядку, используем Default
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull 
+            });
 
-        /// <summary>
-        /// Продакшен режим: реальный запрос к API Ozon Pay.
-        /// </summary>
-        private async Task<IActionResult> CreatePaymentReal(CreatePaymentOzonRequest request)
-        {
+            // Определяем путь для подписи (без BaseUrl!)
+            var path = "/v1/payment/create";
+
+            // Генерируем подпись по правилам Acquiring
+            var signature = _signatureService.GenerateSignature("POST", path, jsonPayload, _secretKey);
+
+            var message = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}{path}");
+            
+            // Заголовки
+            message.Headers.Add("X-Api-Key", _accessKey);
+            message.Headers.Add("X-Signature", signature);
+            message.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            message.Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
             try
             {
-                // Формируем тело запроса для Ozon (переводим рубли в копейки)
-                var ozonRequest = new OzonCreatePaymentRequest(
-                    OrderNumber: request.OrderId,
-                    AmountInKopecks: (int)(request.Amount * 100),
-                    Description: request.Description
-                );
-
-                // Настраиваем HTTP-запрос
-                var message = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/v1/payment/create");
-                message.Headers.Add("Client-Id", _clientId);
-                message.Headers.Add("Api-Key", _apiKey);
-                message.Content = JsonContent.Create(ozonRequest);
-
-                // Отправляем запрос
                 var response = await _httpClient.SendAsync(message);
+                
+                // Читаем ответ ДО проверки статуса, чтобы увидеть тело ошибки
+                var responseBody = await response.Content.ReadAsStringAsync(); 
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    return StatusCode((int)response.StatusCode, $"Ошибка Ozon API: {errorContent}");
+                    // В лог выведите: path, jsonPayload, signature, responseBody
+                    return StatusCode((int)response.StatusCode, $"Ошибка Ozon API: {responseBody}");
                 }
 
-                var ozonResponse = await response.Content.ReadFromJsonAsync<OzonPaymentResponse>();
-                
-                if (ozonResponse == null)
-                    return BadRequest("Не удалось прочитать ответ от Ozon Pay");
-
-                // Возвращаем клиенту URL для оплаты
-                return Ok(new { paymentUrl = ozonResponse.PaymentUrl, paymentId = ozonResponse.PaymentId });
+                var ozonResponse = JsonSerializer.Deserialize<OzonPaymentResponse>(responseBody);
+                return Ok(new { paymentUrl = ozonResponse?.PaymentUrl, paymentId = ozonResponse?.PaymentId });
             }
             catch (Exception ex)
             {
-                // Логирование ex (ILogger) рекомендуется добавить здесь
-                return StatusCode(500, $"Внутренняя ошибка сервера: {ex.Message}");
+                return StatusCode(500, $"Ошибка сети: {ex.Message}");
             }
         }
 
