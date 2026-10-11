@@ -13,20 +13,12 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. КОНФИГУРАЦИЯ
 // ============================================================
 
-builder.Services.Configure<OzonSellerParam>(
-    builder.Configuration.GetSection("OzonSeller"));
-
-builder.Services.Configure<OzonDeliveryParam>(
-    builder.Configuration.GetSection("OzonDelivery"));
-
-builder.Services.Configure<PasswordGuid>(
-    builder.Configuration.GetSection("PasswordGuid"));
-
-builder.Services.Configure<EmailSettingsParam>(
-    builder.Configuration.GetSection("EmailSettings"));
-
-builder.Services.Configure<YandexGeocoderParam>(
-    builder.Configuration.GetSection("YandexGeocoder"));
+builder.Services.Configure<OzonSellerParam>(builder.Configuration.GetSection("OzonSeller"));
+builder.Services.Configure<OzonPayParam>(builder.Configuration.GetSection("OzonPay"));
+builder.Services.Configure<OzonDeliveryParam>(builder.Configuration.GetSection("OzonDelivery"));
+builder.Services.Configure<PasswordGuid>(builder.Configuration.GetSection("PasswordGuid"));
+builder.Services.Configure<EmailSettingsParam>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.Configure<YandexGeocoderParam>(builder.Configuration.GetSection("YandexGeocoder"));
 
 // ============================================================
 // 2. БАЗОВЫЕ СЕРВИСЫ
@@ -43,13 +35,11 @@ builder.Services.AddMemoryCache();
 
 builder.Services.AddTransient<OzonDeliveryAuthHandler>();
 builder.Services.AddTransient<OzonAuthHandler>();
-
 builder.Services.AddSingleton<OzonSyncTrigger>();
 builder.Services.AddSingleton<IOzonAuthService, OzonAuthService>();
-
 builder.Services.AddScoped<OzonDeliverySyncService>();
 builder.Services.AddScoped<IOzonStockService, OzonStockService>();
-
+builder.Services.AddScoped<IOzonSignatureService, OzonSignatureService>();
 builder.Services.AddHostedService<OzonDeliverySyncWorker>();
 
 // ============================================================
@@ -72,9 +62,7 @@ builder.Services.AddHttpClient(
 // 5. MYSQL
 // ============================================================
 
-var shopConnectionString =
-    builder.Configuration[
-        "ConnectionDataShop:ConnectionDataString"];
+var shopConnectionString = builder.Configuration["ConnectionDataShop:ConnectionDataString"];
 
 if (string.IsNullOrWhiteSpace(shopConnectionString))
 {

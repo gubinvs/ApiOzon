@@ -5,7 +5,8 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+using ApiOzon.Core;
+using Microsoft.Extensions.Options;
 
 namespace ApiOzon.Controllers
 {
@@ -14,32 +15,32 @@ namespace ApiOzon.Controllers
     public class OzonPayController : ControllerBase
     {
         private readonly HttpClient _httpClient;
-        private readonly IConfiguration _configuration;
         private readonly IOzonSignatureService _signatureService;
+        private readonly  OzonPayParam _param;
 
         // Поля для авторизации (названия соответствуют вашему appsettings.json)
         private readonly string _baseUrl;
         private readonly string _accessKey;
         private readonly string _secretKey;
         private readonly string _notificationSecretKey;
-        
-        // Для эмуляции сети
-        private static readonly TimeSpan _networkLatency = TimeSpan.FromMilliseconds(800);
 
-        public OzonPayController(
+        
+
+        public OzonPayController (
             HttpClient httpClient, 
             IConfiguration configuration,
-            IOzonSignatureService signatureService)
+            IOzonSignatureService signatureService,
+            IOptions<OzonPayParam>  options)
         {
             _httpClient = httpClient;
-            _configuration = configuration;
             _signatureService = signatureService;
+            _param = options.Value;
 
             // Читаем ключи с именами из вашего конфига
-            _baseUrl = configuration["OzonPay:BaseUrl"] ?? "https://api.ozon.ru";
-            _accessKey = configuration["OzonPay:AccessKey"] ?? "YOUR_ACCESS_KEY";
-            _secretKey = configuration["OzonPay:SecretKey"] ?? "YOUR_SECRET_KEY";
-            _notificationSecretKey = configuration["OzonPay:NotificationSecretKey"] ?? "YOUR_NOTIFICATION_SECRET";
+            _baseUrl = _param.BaseUrl;
+            _accessKey = _param.AccessKey;
+            _secretKey = _param.SecretKey;
+            _notificationSecretKey = _param.NotificationSecretKey;
         }
 
         [HttpPost("create")]
@@ -52,7 +53,6 @@ namespace ApiOzon.Controllers
             var ozonRequest = new OzonCreatePaymentRequest(
                 OrderNumber: request.OrderId,
                 AmountInKopecks: (int)(request.Amount * 100),
-                Description: request.Description,
                 CustomerEmail: request.CustomerEmail,
                 ReturnUrl: returnUrl,
                 Receipt: new OzonReceipt(
@@ -66,7 +66,10 @@ namespace ApiOzon.Controllers
                             VatCode: 2
                         )
                     }
-                )
+                ),
+                // Необязательные параметры можно опустить, если подходят значения по умолчанию
+                Currency: "RUB", 
+                Description: request.Description 
             );
 
             // Сериализуем JSON без лишних пробелов (Minified)
@@ -77,7 +80,7 @@ namespace ApiOzon.Controllers
             });
 
             // Путь для подписи (без домена)
-            var path = "/v1/payment/create";
+            var path = "v1/getOrderDetails";
 
             // Генерируем подпись: METHOD + PATH + BODY
             var signature = _signatureService.GenerateSignature("POST", path, jsonPayload, _secretKey);
@@ -96,10 +99,15 @@ namespace ApiOzon.Controllers
                 var response = await _httpClient.SendAsync(message);
                 var responseBody = await response.Content.ReadAsStringAsync();
 
-                if (!response.IsSuccessStatusCode)
+               if (!response.IsSuccessStatusCode)
                 {
-                    // Логируем signature и jsonPayload, если ошибка 401
-                    return StatusCode((int)response.StatusCode, $"Ошибка Ozon API: {responseBody}");
+                    return StatusCode((int)response.StatusCode, new
+                    {
+                        statusCode = (int)response.StatusCode,
+                        reasonPhrase = response.ReasonPhrase,
+                        responseBody = responseBody,
+                        requestUrl = $"{_baseUrl}{path}"
+                    });
                 }
 
                 var ozonResponse = JsonSerializer.Deserialize<OzonPaymentResponse>(responseBody);
