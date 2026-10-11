@@ -106,13 +106,11 @@ builder.Services.AddCors(options =>
 });
 
 
-builder.Services.AddHttpClient<OzonPayController>();
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    });
-
+builder.Services.AddHttpClient("OzonPay", client =>
+{
+    client.BaseAddress = new Uri("https://api.ozon.ru/"); 
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ApiOzon/1.0");
+});
 
 // ============================================================
 // 8. СОЗДАНИЕ ПРИЛОЖЕНИЯ

@@ -34,12 +34,16 @@ namespace ApiOzon.Models
 
     // 3. Модель запроса к API Ozon Pay (включая чеки 54-ФЗ)
     public record OzonCreatePaymentRequest(
+        // 1. Обязательные параметры (сначала)
         [property: JsonPropertyName("order_number")] string OrderNumber,
         [property: JsonPropertyName("amount")] int AmountInKopecks,
+        [property: JsonPropertyName("customer_email")] string CustomerEmail,
+        [property: JsonPropertyName("return_url")] string ReturnUrl,
+        [property: JsonPropertyName("receipt")] OzonReceipt Receipt,
+        
+        // 2. Необязательные параметры (в конце, со значениями по умолчанию)
         [property: JsonPropertyName("currency")] string Currency = "RUB",
-        [property: JsonPropertyName("description")] string? Description = null,
-        // Объект для передачи данных чека (54-ФЗ)
-        [property: JsonPropertyName("receipt")] OzonReceipt? Receipt = null
+        [property: JsonPropertyName("description")] string? Description = null
     );
 
     // Вспомогательные модели для чека

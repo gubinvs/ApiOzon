@@ -1,10 +1,11 @@
 using ApiOzon.Models;
-using ApiOzon.Core;
 using ApiOzon.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks; // Для корректной работы async/await
+using System.Threading.Tasks;
 
 namespace ApiOzon.Controllers
 {
@@ -14,27 +15,33 @@ namespace ApiOzon.Controllers
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly IOzonSignatureService _signatureService;
+
+        // Поля для авторизации (названия соответствуют вашему appsettings.json)
         private readonly string _baseUrl;
-        private readonly string _clientId;
-        private readonly string _apiKey;
+        private readonly string _accessKey;
+        private readonly string _secretKey;
+        private readonly string _notificationSecretKey;
         
-        // Добавлено: задержка для эмуляции сети
+        // Для эмуляции сети
         private static readonly TimeSpan _networkLatency = TimeSpan.FromMilliseconds(800);
 
-        public OzonPayController(HttpClient httpClient, IConfiguration configuration)
+        public OzonPayController(
+            HttpClient httpClient, 
+            IConfiguration configuration,
+            IOzonSignatureService signatureService)
         {
             _httpClient = httpClient;
             _configuration = configuration;
+            _signatureService = signatureService;
 
+            // Читаем ключи с именами из вашего конфига
             _baseUrl = configuration["OzonPay:BaseUrl"] ?? "https://api.ozon.ru";
-            _clientId = configuration["OzonPay:ClientId"] ?? "YOUR_CLIENT_ID";
-            _apiKey = configuration["OzonPay:ApiKey"] ?? "YOUR_API_KEY";
+            _accessKey = configuration["OzonPay:AccessKey"] ?? "YOUR_ACCESS_KEY";
+            _secretKey = configuration["OzonPay:SecretKey"] ?? "YOUR_SECRET_KEY";
+            _notificationSecretKey = configuration["OzonPay:NotificationSecretKey"] ?? "YOUR_NOTIFICATION_SECRET";
         }
 
-        /// <summary>
-        /// Инициализация платежа. 
-        /// Переключатель между реальным API и тестовым стендом.
-        /// </summary>
         [HttpPost("create")]
         public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentOzonRequest request)
         {
@@ -62,21 +69,22 @@ namespace ApiOzon.Controllers
                 )
             );
 
+            // Сериализуем JSON без лишних пробелов (Minified)
             var jsonPayload = JsonSerializer.Serialize(ozonRequest, new JsonSerializerOptions
             {
-                // Ozon Acquiring чувствителен к пробелам и порядку, используем Default
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull 
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                WriteIndented = false
             });
 
-            // Определяем путь для подписи (без BaseUrl!)
+            // Путь для подписи (без домена)
             var path = "/v1/payment/create";
 
-            // Генерируем подпись по правилам Acquiring
+            // Генерируем подпись: METHOD + PATH + BODY
             var signature = _signatureService.GenerateSignature("POST", path, jsonPayload, _secretKey);
 
             var message = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}{path}");
             
-            // Заголовки
+            // Устанавливаем заголовки
             message.Headers.Add("X-Api-Key", _accessKey);
             message.Headers.Add("X-Signature", signature);
             message.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -86,18 +94,18 @@ namespace ApiOzon.Controllers
             try
             {
                 var response = await _httpClient.SendAsync(message);
-                
-                // Читаем ответ ДО проверки статуса, чтобы увидеть тело ошибки
-                var responseBody = await response.Content.ReadAsStringAsync(); 
+                var responseBody = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    // В лог выведите: path, jsonPayload, signature, responseBody
+                    // Логируем signature и jsonPayload, если ошибка 401
                     return StatusCode((int)response.StatusCode, $"Ошибка Ozon API: {responseBody}");
                 }
 
                 var ozonResponse = JsonSerializer.Deserialize<OzonPaymentResponse>(responseBody);
-                return Ok(new { paymentUrl = ozonResponse?.PaymentUrl, paymentId = ozonResponse?.PaymentId });
+                if (ozonResponse == null) return BadRequest("Пустой ответ от Ozon");
+
+                return Ok(new { paymentUrl = ozonResponse.PaymentUrl, paymentId = ozonResponse.PaymentId });
             }
             catch (Exception ex)
             {
@@ -105,43 +113,48 @@ namespace ApiOzon.Controllers
             }
         }
 
-        /// <summary>
-        /// Точка приема Webhook уведомлений от Ozon Pay.
-        /// ВАЖНО: В продакшене необходимо проверять подпись (X-Ozon-Signature).
-        /// </summary>
         [HttpPost("webhook")]
-        public async Task<IActionResult> HandleWebhook([FromBody] OzonWebhookPayload payload)
+        public async Task<IActionResult> HandleWebhook()
         {
-            await Task.Delay(_networkLatency);
+            // 1. Читаем тело запроса как строку для проверки подписи
+            var jsonBody = await new StreamReader(Request.Body).ReadToEndAsync();
 
-            // 1. Проверка подписи (заглушка)
-            // if (!ValidateSignature(Request.Headers, payload)) return Unauthorized();
+            // 2. Получаем подпись из заголовка
+            var incomingSignature = Request.Headers["X-Signature"].FirstOrDefault();
 
-            // 2. Поиск заказа в БД по payload.OrderNumber
+            // 3. Вычисляем ожидаемую подпись
+            var expectedSignature = _signatureService.GenerateSignature("POST", "/payment/callback", jsonBody, _notificationSecretKey);
+
+            // 4. Сравниваем (используем Ordinal для безопасности)
+            if (string.IsNullOrEmpty(incomingSignature) || 
+                !incomingSignature.Equals(expectedSignature, StringComparison.Ordinal))
+            {
+                return Unauthorized("Неверная подпись вебхука");
+            }
+
+            // 5. Если подпись верна, сбрасываем позицию потока и десериализуем модель
+            Request.Body.Position = 0;
+            var payload = await JsonSerializer.DeserializeAsync<OzonWebhookPayload>(Request.Body);
+
+            if (payload == null) return BadRequest("Не удалось прочитать payload");
+
+            // --- ВАША БИЗНЕС-ЛОГИКА (пример) ---
             // var order = await _dbContext.Orders.FindAsync(payload.OrderNumber);
             // if (order == null) return NotFound();
 
-            // 3. Проверка суммы (защита от подмены данных)
-            // if (payload.AmountInRubles != order.TotalAmount) 
-            //     return BadRequest("Сумма в вебхуке не совпадает с суммой заказа");
+            // switch (payload.Status)
+            // {
+            //     case OzonPaymentStatus.SUCCEEDED:
+            //         order.Status = OrderStatus.Paid;
+            //         await _dbContext.SaveChangesAsync();
+            //         break;
+            //     case OzonPaymentStatus.FAILED:
+            //         order.Status = OrderStatus.Failed;
+            //         await _dbContext.SaveChangesAsync();
+            //         break;
+            // }
 
-            // 4. Смена статуса заказа
-            switch (payload.Status)
-            {
-                case OzonPaymentStatus.SUCCEEDED:
-                    // order.Status = OrderStatus.Paid;
-                    // Отправить флаг, который позволит продолжить оформление доставки
-                    break;
-
-                case OzonPaymentStatus.FAILED:
-                case OzonPaymentStatus.CANCELLED:
-                    // order.Status = OrderStatus.PaymentFailed;
-                    break;
-            }
-
-            // await _dbContext.SaveChangesAsync();
-
-            // Ozon ожидает 200 OK, иначе будет слать вебхук повторно по экспоненте
+            // Ozon всегда должен получать 200 OK, иначе он будет слать запрос каждые 5 минут
             return Ok();
         }
     }
