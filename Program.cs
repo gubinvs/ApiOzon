@@ -5,6 +5,7 @@ using ApiOzon.Models;
 using ApiOzon.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -104,11 +105,13 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ============================================================
-// 7. HTTP CLIENT ОБЫЧНОГО ИНТЕРНЕТ-ЭКВАЙРИНГА СБЕРА
-// ============================================================
 
 builder.Services.AddHttpClient<OzonPayController>();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 
 // ============================================================

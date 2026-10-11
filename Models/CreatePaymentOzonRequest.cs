@@ -1,37 +1,79 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace ApiOzon.Models
 {
-        // Модель для запроса на создание платежа внутри вашей системы
-        public record CreatePaymentOzonRequest (
-            string OrderId, 
-            decimal Amount, 
-            string Description, 
-            string CustomerEmail
-        );
+    // 1. Модель для запроса на создание платежа внутри вашей системы (от фронта к вашему API)
+    public record CreatePaymentOzonRequest
+    {
+        [Required(ErrorMessage = "Укажите идентификатор заказа")]
+        public string OrderId { get; init; } = null!;
 
-        // Модель запроса к API Ozon Pay
-        public record OzonCreatePaymentRequest(
-            [property: JsonPropertyName("order_number")] string OrderNumber,
-            [property: JsonPropertyName("amount")] int AmountInKopecks, // Ozon обычно принимает в копейках
-            [property: JsonPropertyName("currency")] string Currency = "RUB",
-            [property: JsonPropertyName("description")] string? Description = null
-            // Сюда также можно добавить объект "receipt" для 54-ФЗ
-        );
+        [Required(ErrorMessage = "Укажите сумму")]
+        [Range(0.01, 1000000, ErrorMessage = "Сумма должна быть от 0.01 до 1 000 000 рублей")]
+        public decimal Amount { get; init; }
 
-        // Модель ответа от API Ozon Pay
-        public record OzonPaymentResponse(
-            [property: JsonPropertyName("payment_id")] string PaymentId,
-            [property: JsonPropertyName("payment_url")] string PaymentUrl,
-            [property: JsonPropertyName("status")] string Status
-        );
+        public string? Description { get; init; }
 
-        // Модель Webhook от Ozon Pay
-        public record OzonWebhookPayload(
-            [property: JsonPropertyName("payment_id")] string PaymentId,
-            [property: JsonPropertyName("order_number")] string OrderNumber,
-            [property: JsonPropertyName("status")] string Status,
-            [property: JsonPropertyName("amount")] int Amount
-        );
+        [Required(ErrorMessage = "Укажите email покупателя")]
+        [EmailAddress(ErrorMessage = "Некорректный формат email")]
+        public string CustomerEmail { get; init; } = null!;
+    }
 
+    // 2. Статусы платежа (строгая типизация)
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum OzonPaymentStatus
+    {
+        CREATED,
+        PENDING,
+        SUCCEEDED,
+        FAILED,
+        CANCELLED,
+        EXPIRED
+    }
+
+    // 3. Модель запроса к API Ozon Pay (включая чеки 54-ФЗ)
+    public record OzonCreatePaymentRequest(
+        [property: JsonPropertyName("order_number")] string OrderNumber,
+        [property: JsonPropertyName("amount")] int AmountInKopecks,
+        [property: JsonPropertyName("currency")] string Currency = "RUB",
+        [property: JsonPropertyName("description")] string? Description = null,
+        // Объект для передачи данных чека (54-ФЗ)
+        [property: JsonPropertyName("receipt")] OzonReceipt? Receipt = null
+    );
+
+    // Вспомогательные модели для чека
+    public record OzonReceipt(
+        [property: JsonPropertyName("customer")] string CustomerEmail,
+        [property: JsonPropertyName("items")] List<OzonReceiptItem> Items,
+        [property: JsonPropertyName("tax_system_code")] int TaxSystemCode = 1 // Общая система налогообложения (ОСНО)
+    );
+
+    public record OzonReceiptItem(
+        [property: JsonPropertyName("description")] string Description,
+        [property: JsonPropertyName("quantity")] int Quantity,
+        [property: JsonPropertyName("amount")] int AmountInKopecks,
+        [property: JsonPropertyName("vat_code")] int VatCode = 2 // НДС 20%
+    );
+
+    // 4. Модель ответа от API Ozon Pay
+    public record OzonPaymentResponse(
+        [property: JsonPropertyName("payment_id")] string PaymentId,
+        [property: JsonPropertyName("payment_url")] string PaymentUrl,
+        // Добавляем конвертер прямо к свойству
+        [property: JsonPropertyName("status")]
+        [property: JsonConverter(typeof(JsonStringEnumConverter))] 
+        OzonPaymentStatus Status
+    );
+
+    // 5. Модель Webhook от Ozon Pay
+    public record OzonWebhookPayload(
+        [property: JsonPropertyName("payment_id")] string PaymentId,
+        [property: JsonPropertyName("order_number")] string OrderNumber,
+        // Добавляем конвертер прямо к свойству
+        [property: JsonPropertyName("status")]
+        [property: JsonConverter(typeof(JsonStringEnumConverter))] 
+        OzonPaymentStatus Status,
+        [property: JsonPropertyName("amount")] int AmountInKopecks
+    );
 }

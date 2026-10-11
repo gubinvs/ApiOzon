@@ -1,107 +1,160 @@
+using ApiOzon.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
-using ApiOzon.Models;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks; // Для корректной работы async/await
 
 namespace ApiOzon.Controllers
 {
     [ApiController]
     [Route("v1/[controller]")]
-    public class OzonPayController (HttpClient httpClient, IConfiguration configuration) : ControllerBase
+    public class OzonPayController : ControllerBase
     {
-        // Данные для авторизации (в продакшене перенести в Secret Manager / AppSettings)
-        private readonly string _baseUrl = configuration["OzonPay:BaseUrl"] ?? "https://ozon.ru";
-        private readonly string _clientId = configuration["OzonPay:ClientId"] ?? "YOUR_CLIENT_ID";
-        private readonly string _apiKey = configuration["OzonPay:ApiKey"] ?? "YOUR_API_KEY";
+        private readonly HttpClient _httpClient;
+        private readonly IConfiguration _configuration;
+        private readonly string _baseUrl;
+        private readonly string _clientId;
+        private readonly string _apiKey;
+        
+        // Добавлено: задержка для эмуляции сети
+        private static readonly TimeSpan _networkLatency = TimeSpan.FromMilliseconds(800);
 
-        /// <summary>
-        /// Инициализация платежа на стороне Ozon Pay
-        /// </summary>
-        // [HttpPost("create")]
-        // public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentOzonRequest request)
-        // {
-        //     try
-        //     {
-        //         // Формируем тело запроса для Ozon Pay (переводим рубли в копейки)
-        //         var ozonRequest = new OzonCreatePaymentRequest(
-        //             OrderNumber: request.OrderId,
-        //             AmountInKopecks: (int)(request.Amount * 100),
-        //             Description: request.Description
-        //         );
-
-        //         // Настраиваем HTTP-запрос с заголовками авторизации
-        //         var message = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}v1/payment/create");
-        //         message.Headers.Add("Client-Id", _clientId);
-        //         message.Headers.Add("Api-Key", _apiKey);
-        //         message.Content = JsonContent.Create(ozonRequest);
-
-        //         var response = await httpClient.SendAsync(message);
-
-        //         if (!response.IsSuccessStatusCode)
-        //         {
-        //             var errorContent = await response.Content.ReadAsStringAsync();
-        //             return StatusCode((int)response.StatusCode, $"Ошибка Ozon API: {errorContent}");
-        //         }
-
-        //         var ozonResponse = await response.Content.ReadFromJsonAsync<OzonPaymentResponse>();
-                
-        //         if (ozonResponse == null)
-        //             return BadRequest("Не удалось прочитать ответ от Ozon Pay");
-
-        //         // Возвращаем клиенту URL для оплаты
-        //         return Ok(new { paymentUrl = ozonResponse.PaymentUrl, paymentId = ozonResponse.PaymentId });
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         return StatusCode(500, $"Внутренняя ошибка: {ex.Message}");
-        //     }
-        // }
-
-        [HttpPost("create")]
-        public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentOzonRequest request)
+        public OzonPayController(HttpClient httpClient, IConfiguration configuration)
         {
-            // ИМИТАЦИЯ: вместо реального запроса к Ozon генерируем фейковый успешный ответ
-            var mockPaymentId = Guid.NewGuid().ToString();
-            
-            // В тестовых целях перенаправляем на страницу-заглушку (например, ваш фронтенд)
-            var mockPaymentUrl = $"http://localhost:5148?paymentId={mockPaymentId}&amount={request.Amount}";
+            _httpClient = httpClient;
+            _configuration = configuration;
 
-            var ozonResponse = new OzonPaymentResponse(
-                PaymentId: mockPaymentId,
-                PaymentUrl: mockPaymentUrl,
-                Status: "CREATED"
-            );
-
-            return Ok(new { paymentUrl = ozonResponse.PaymentUrl, paymentId = ozonResponse.PaymentId });
+            _baseUrl = configuration["OzonPay:BaseUrl"] ?? "https://api.ozon.ru";
+            _clientId = configuration["OzonPay:ClientId"] ?? "YOUR_CLIENT_ID";
+            _apiKey = configuration["OzonPay:ApiKey"] ?? "YOUR_API_KEY";
         }
 
         /// <summary>
-        /// Точка приема Webhook уведомлений от Ozon Pay об изменении статуса
+        /// Инициализация платежа. 
+        /// Переключатель между реальным API и тестовым стендом.
+        /// </summary>
+        [HttpPost("create")]
+        public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentOzonRequest request)
+        {
+            // Валидация входных данных
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Проверка переменной конфигурации (в appsettings.json: "OzonPay:UseMock": true)
+            bool useMock = _configuration.GetValue<bool>("OzonPay:UseMock");
+
+            if (useMock)
+            {
+                return await CreatePaymentMock(request);
+            }
+            else
+            {
+                return await CreatePaymentReal(request);
+            }
+        }
+
+        /// <summary>
+        /// Тестовый режим: имитирует ответ Ozon без внешних запросов.
+        /// </summary>
+        private async Task<IActionResult> CreatePaymentMock(CreatePaymentOzonRequest request)
+        {
+            await Task.Delay(_networkLatency); // Имитация сетевого лага
+
+            var mockPaymentId = Guid.NewGuid().ToString();
+            var mockPaymentUrl = $"http://localhost:5148/pay?paymentId={mockPaymentId}";
+
+            var response = new OzonPaymentResponse(
+                PaymentId: mockPaymentId,
+                PaymentUrl: mockPaymentUrl,
+                Status: OzonPaymentStatus.CREATED
+            );
+
+            return Ok(new { paymentUrl = response.PaymentUrl, paymentId = response.PaymentId });
+        }
+
+        /// <summary>
+        /// Продакшен режим: реальный запрос к API Ozon Pay.
+        /// </summary>
+        private async Task<IActionResult> CreatePaymentReal(CreatePaymentOzonRequest request)
+        {
+            try
+            {
+                // Формируем тело запроса для Ozon (переводим рубли в копейки)
+                var ozonRequest = new OzonCreatePaymentRequest(
+                    OrderNumber: request.OrderId,
+                    AmountInKopecks: (int)(request.Amount * 100),
+                    Description: request.Description
+                );
+
+                // Настраиваем HTTP-запрос
+                var message = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/v1/payment/create");
+                message.Headers.Add("Client-Id", _clientId);
+                message.Headers.Add("Api-Key", _apiKey);
+                message.Content = JsonContent.Create(ozonRequest);
+
+                // Отправляем запрос
+                var response = await _httpClient.SendAsync(message);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    return StatusCode((int)response.StatusCode, $"Ошибка Ozon API: {errorContent}");
+                }
+
+                var ozonResponse = await response.Content.ReadFromJsonAsync<OzonPaymentResponse>();
+                
+                if (ozonResponse == null)
+                    return BadRequest("Не удалось прочитать ответ от Ozon Pay");
+
+                // Возвращаем клиенту URL для оплаты
+                return Ok(new { paymentUrl = ozonResponse.PaymentUrl, paymentId = ozonResponse.PaymentId });
+            }
+            catch (Exception ex)
+            {
+                // Логирование ex (ILogger) рекомендуется добавить здесь
+                return StatusCode(500, $"Внутренняя ошибка сервера: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Точка приема Webhook уведомлений от Ozon Pay.
+        /// ВАЖНО: В продакшене необходимо проверять подпись (X-Ozon-Signature).
         /// </summary>
         [HttpPost("webhook")]
         public async Task<IActionResult> HandleWebhook([FromBody] OzonWebhookPayload payload)
         {
-            // ВАЖНО: Здесь должна быть проверка подписи запроса, если Ozon ее передает в заголовках, 
-            // для предотвращения фейковых запросов.
-            
-            if (payload.Status == "SUCCEEDED")
-            {
-                // Логика при успешной оплате:
-                // 1. Найти заказ в БД по payload.OrderNumber
-                // 2. Проверить, совпадает ли сумма payload.Amount с суммой заказа в БД
-                // 3. Сменить статус заказа на "Оплачен"
-                // 4. Отгрузить товар или активировать услугу
+            await Task.Delay(_networkLatency);
 
-                // Отправить флаг который позволит продолжить оформление доставки заказа
-                
-                return Ok(); // Возвращаем 200 OK, чтобы Ozon понял, что уведомление доставлено успешно
-            }
-            
-            if (payload.Status == "FAILED")
+            // 1. Проверка подписи (заглушка)
+            // if (!ValidateSignature(Request.Headers, payload)) return Unauthorized();
+
+            // 2. Поиск заказа в БД по payload.OrderNumber
+            // var order = await _dbContext.Orders.FindAsync(payload.OrderNumber);
+            // if (order == null) return NotFound();
+
+            // 3. Проверка суммы (защита от подмены данных)
+            // if (payload.AmountInRubles != order.TotalAmount) 
+            //     return BadRequest("Сумма в вебхуке не совпадает с суммой заказа");
+
+            // 4. Смена статуса заказа
+            switch (payload.Status)
             {
-                // Логика при отмене или ошибке платежа
-                return Ok();
+                case OzonPaymentStatus.SUCCEEDED:
+                    // order.Status = OrderStatus.Paid;
+                    // Отправить флаг, который позволит продолжить оформление доставки
+                    break;
+
+                case OzonPaymentStatus.FAILED:
+                case OzonPaymentStatus.CANCELLED:
+                    // order.Status = OrderStatus.PaymentFailed;
+                    break;
             }
 
+            // await _dbContext.SaveChangesAsync();
+
+            // Ozon ожидает 200 OK, иначе будет слать вебхук повторно по экспоненте
             return Ok();
         }
     }
