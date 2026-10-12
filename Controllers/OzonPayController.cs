@@ -8,7 +8,6 @@ using System.Text.Json.Serialization;
 using ApiOzon.Core;
 using Microsoft.Extensions.Options;
 using System.IO.Compression; 
-using System.Linq; // Не забудь добавить для Any()
 
 namespace ApiOzon.Controllers
 {
