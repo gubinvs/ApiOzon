@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ApiOzon")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9b8f558e99952e74e6cca55b4f26578d9adcd333")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ecd14f477db0bb23575aa1d582623d831ef2efa7")]
 [assembly: System.Reflection.AssemblyProductAttribute("ApiOzon")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ApiOzon")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,13 +1,10 @@
 using ApiOzon.Models;
 using ApiOzon.Services;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using ApiOzon.Core;
 using Microsoft.Extensions.Options;
 using System.IO.Compression; 
