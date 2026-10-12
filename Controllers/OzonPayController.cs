@@ -1,12 +1,17 @@
 using ApiOzon.Models;
 using ApiOzon.Services;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using ApiOzon.Core;
 using Microsoft.Extensions.Options;
+using System.IO.Compression; 
+using System.Linq; // Не забудь добавить для Any()
 
 namespace ApiOzon.Controllers
 {
@@ -16,154 +21,175 @@ namespace ApiOzon.Controllers
     {
         private readonly HttpClient _httpClient;
         private readonly IOzonSignatureService _signatureService;
-        private readonly  OzonPayParam _param;
+        private readonly OzonPayParam _param;
 
-        // Поля для авторизации (названия соответствуют вашему appsettings.json)
-        private readonly string _baseUrl;
-        private readonly string _accessKey;
-        private readonly string _secretKey;
-        private readonly string _notificationSecretKey;
-
-        
-
-        public OzonPayController (
+        public OzonPayController(
             HttpClient httpClient, 
-            IConfiguration configuration,
             IOzonSignatureService signatureService,
-            IOptions<OzonPayParam>  options)
+            IOptions<OzonPayParam> options)
         {
             _httpClient = httpClient;
             _signatureService = signatureService;
             _param = options.Value;
-
-            // Читаем ключи с именами из вашего конфига
-            _baseUrl = _param.BaseUrl;
-            _accessKey = _param.AccessKey;
-            _secretKey = _param.SecretKey;
-            _notificationSecretKey = _param.NotificationSecretKey;
         }
 
-        [HttpPost("create")]
-        public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentOzonRequest request)
+        [HttpPost]
+        public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentOzonRequest clientRequest)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var returnUrl = $"{Request.Scheme}://{Request.Host}/payment-result?order={request.OrderId}";
-
-            var ozonRequest = new OzonCreatePaymentRequest(
-                OrderNumber: request.OrderId,
-                AmountInKopecks: (int)(request.Amount * 100),
-                CustomerEmail: request.CustomerEmail,
-                ReturnUrl: returnUrl,
-                Receipt: new OzonReceipt(
-                    CustomerEmail: request.CustomerEmail,
-                    Items: new List<OzonReceiptItem>
-                    {
-                        new(
-                            Description: request.Description ?? "Оплата заказа",
-                            Quantity: 1,
-                            AmountInKopecks: (int)(request.Amount * 100),
-                            VatCode: 2
-                        )
-                    }
-                ),
-                // Необязательные параметры можно опустить, если подходят значения по умолчанию
-                Currency: "RUB", 
-                Description: request.Description 
-            );
-
-            // Сериализуем JSON без лишних пробелов (Minified)
-            var jsonPayload = JsonSerializer.Serialize(ozonRequest, new JsonSerializerOptions
+            if (!ModelState.IsValid)
             {
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                WriteIndented = false
-            });
-
-            // Путь для подписи (без домена)
-            var path = "v1/getOrderDetails";
-
-            // Генерируем подпись: METHOD + PATH + BODY
-            var signature = _signatureService.GenerateSignature("POST", path, jsonPayload, _secretKey);
-
-            var message = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}{path}");
-            
-            // Устанавливаем заголовки
-            message.Headers.Add("X-Api-Key", _accessKey);
-            message.Headers.Add("X-Signature", signature);
-            message.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            message.Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                return BadRequest(ModelState);
+            }
 
             try
             {
-                var response = await _httpClient.SendAsync(message);
-                var responseBody = await response.Content.ReadAsStringAsync();
-
-               if (!response.IsSuccessStatusCode)
+                // 1. Формируем запрос на основе параметров из конфигурации
+                var finalizedRequest = clientRequest with
                 {
-                    return StatusCode((int)response.StatusCode, new
-                    {
-                        statusCode = (int)response.StatusCode,
-                        reasonPhrase = response.ReasonPhrase,
-                        responseBody = responseBody,
-                        requestUrl = $"{_baseUrl}{path}"
+                    AccessKey = _param.AccessKey,
+                    FailUrl = _param.FailUrl,
+                    SuccessUrl = _param.SuccessUrl,
+                    NotificationUrl = string.Empty, 
+                    ReceiptEmail = _param.ReceiptEmail,
+                    
+                    Mode = "MODE_FULL",
+                    PaymentAlgorithm = "PAY_ALGO_SMS",      
+                    FiscalizationType = "FISCAL_TYPE_SINGLE", 
+                    EnableFiscalization = true,
+
+                    ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30),
+                    Amount = clientRequest.Amount with { CurrencyCode = "643" },
+                    DeliverySettings = new DeliverySettings { IsEnabled = true },
+                    Items = UpdateItemsCurrency(clientRequest.Items)
+                };
+
+                var jsonOptions = new JsonSerializerOptions 
+                { 
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull 
+                };
+
+                // 2. Генерируем "чистый" JSON для расчета сигнатуры подписи
+                string jsonForSignature = JsonSerializer.Serialize(finalizedRequest with { RequestSign = string.Empty }, jsonOptions);
+
+                string httpMethod = "POST";
+                string path = "/v1/createOrder"; 
+
+                // 3. Вычисляем подпись через твой сервис
+                string signature = _signatureService.GenerateSignature(httpMethod, path, jsonForSignature, _param.SecretKey);
+                
+                // 4. Вшиваем готовую подпись в финальный JSON-пакет
+                finalizedRequest = finalizedRequest with { RequestSign = signature };
+                string requestBodyJson = JsonSerializer.Serialize(finalizedRequest, jsonOptions);
+
+                // 5. Отправляем запрос на payapi.ozon.ru
+                var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{_param.BaseUrl.TrimEnd('/')}{path}")
+                {
+                    Content = new StringContent(requestBodyJson, Encoding.UTF8, "application/json")
+                };
+
+                httpRequest.Headers.Clear();
+                httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                httpRequest.Headers.Add("Client-Id", _param.AccessKey); 
+
+                // МЕНЯЕМ ТУТ: Убираем из запроса "br", оставляем только gzip и deflate.
+                // Это заставит прокси Ozon сжать ответ в Gzip, который .NET гарантированно раскусит.
+                httpRequest.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+                httpRequest.Headers.TryAddWithoutValidation("Accept-Encoding", "gzip, deflate");
+                httpRequest.Headers.TryAddWithoutValidation("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8");
+                httpRequest.Headers.TryAddWithoutValidation("Connection", "keep-alive");
+
+                var httpResponse = await _httpClient.SendAsync(httpRequest);
+
+                // 6. Обработка ошибок шлюза с полной декомпрессией
+                if (!httpResponse.IsSuccessStatusCode)
+                {
+                    string errorContent = await DecompressContentAsync(httpResponse.Content);
+                    return StatusCode((int)httpResponse.StatusCode, new 
+                    { 
+                        Message = "Ошибка платежного шлюза Ozon Pay", 
+                        Details = errorContent 
                     });
                 }
 
-                var ozonResponse = JsonSerializer.Deserialize<OzonPaymentResponse>(responseBody);
-                if (ozonResponse == null) return BadRequest("Пустой ответ от Ozon");
+                // 7. Обработка УСПЕШНОГО ОТВЕТА (200 OK)
+                string successContent = await DecompressContentAsync(httpResponse.Content);
 
-                return Ok(new { paymentUrl = ozonResponse.PaymentUrl, paymentId = ozonResponse.PaymentId });
+                try
+                {
+                    var ozonResponse = JsonSerializer.Deserialize<CreatePaymentOzonResponse>(successContent, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (ozonResponse == null)
+                    {
+                        return StatusCode(500, "Критическая ошибка десериализации ответа Ozon.");
+                    }
+
+                    // ЕСЛИ ССЫЛКА ЕСТЬ — ОТДАЕМ ЕЁ СРАЗУ
+                    if (ozonResponse.Order != null && !string.IsNullOrEmpty(ozonResponse.Order.PayLink))
+                    {
+                        return Ok(new 
+                        {
+                            Message = "Успех! Ссылка получена.",
+                            PayUrl = ozonResponse.Order.PayLink,
+                            OrderId = ozonResponse.Order.Id
+                        });
+                    }
+
+                    return Ok(ozonResponse);
+                }
+                catch (JsonException)
+                {
+                    return StatusCode(500, new 
+                    { 
+                        Message = "Не удалось распарсить ответ Озона как JSON", 
+                        RawContent = successContent 
+                    });
+                }
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Ошибка сети: {ex.Message}");
+                return StatusCode(500, new { Message = "Внутренняя ошибка сервера", Error = ex.Message });
             }
         }
 
-        [HttpPost("webhook")]
-        public async Task<IActionResult> HandleWebhook()
+        // БРОНЕБОЙНЫЙ метод автоматической распаковки (проверяет подстроки без учета регистра)
+        private async Task<string> DecompressContentAsync(HttpContent content)
         {
-            // 1. Читаем тело запроса как строку для проверки подписи
-            var jsonBody = await new StreamReader(Request.Body).ReadToEndAsync();
+            var encodings = content.Headers.ContentEncoding.Select(e => e.ToLowerInvariant()).ToList();
 
-            // 2. Получаем подпись из заголовка
-            var incomingSignature = Request.Headers["X-Signature"].FirstOrDefault();
-
-            // 3. Вычисляем ожидаемую подпись
-            var expectedSignature = _signatureService.GenerateSignature("POST", "/payment/callback", jsonBody, _notificationSecretKey);
-
-            // 4. Сравниваем (используем Ordinal для безопасности)
-            if (string.IsNullOrEmpty(incomingSignature) || 
-                !incomingSignature.Equals(expectedSignature, StringComparison.Ordinal))
+            if (encodings.Any(e => e.Contains("br")))
             {
-                return Unauthorized("Неверная подпись вебхука");
+                using var responseStream = await content.ReadAsStreamAsync();
+                using var decompressionStream = new BrotliStream(responseStream, CompressionMode.Decompress);
+                using var reader = new System.IO.StreamReader(decompressionStream, Encoding.UTF8);
+                return await reader.ReadToEndAsync();
+            }
+            if (encodings.Any(e => e.Contains("gzip")))
+            {
+                using var responseStream = await content.ReadAsStreamAsync();
+                using var decompressionStream = new GZipStream(responseStream, CompressionMode.Decompress);
+                using var reader = new System.IO.StreamReader(decompressionStream, Encoding.UTF8);
+                return await reader.ReadToEndAsync();
             }
 
-            // 5. Если подпись верна, сбрасываем позицию потока и десериализуем модель
-            Request.Body.Position = 0;
-            var payload = await JsonSerializer.DeserializeAsync<OzonWebhookPayload>(Request.Body);
+            return await content.ReadAsStringAsync();
+        }
 
-            if (payload == null) return BadRequest("Не удалось прочитать payload");
-
-            // --- ВАША БИЗНЕС-ЛОГИКА (пример) ---
-            // var order = await _dbContext.Orders.FindAsync(payload.OrderNumber);
-            // if (order == null) return NotFound();
-
-            // switch (payload.Status)
-            // {
-            //     case OzonPaymentStatus.SUCCEEDED:
-            //         order.Status = OrderStatus.Paid;
-            //         await _dbContext.SaveChangesAsync();
-            //         break;
-            //     case OzonPaymentStatus.FAILED:
-            //         order.Status = OrderStatus.Failed;
-            //         await _dbContext.SaveChangesAsync();
-            //         break;
-            // }
-
-            // Ozon всегда должен получать 200 OK, иначе он будет слать запрос каждые 5 минут
-            return Ok();
+        private List<OzonPaymentItem> UpdateItemsCurrency(List<OzonPaymentItem> items)
+        {
+            if (items == null) return new List<OzonPaymentItem>();
+            
+            var updatedList = new List<OzonPaymentItem>();
+            foreach (var item in items)
+            {
+                updatedList.Add(item with 
+                { 
+                    Price = item.Price with { CurrencyCode = "643" } 
+                });
+            }
+            return updatedList;
         }
     }
 }

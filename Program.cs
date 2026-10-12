@@ -58,6 +58,14 @@ builder.Services.AddHttpClient(
     })
     .AddHttpMessageHandler<OzonAuthHandler>();
 
+builder.Services.AddHttpClient<OzonPayController>()
+    .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+    {
+        // Указываем, что наш клиент поддерживает сжатие данных, как это делают все браузеры
+        AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+    });
+
+
 // ============================================================
 // 5. MYSQL
 // ============================================================
