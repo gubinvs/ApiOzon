@@ -5,6 +5,7 @@ using ApiOzon.Core;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
+using Microsoft.Extensions.Options;
 
 namespace ApiOzon.Controllers
 {
@@ -18,9 +19,12 @@ namespace ApiOzon.Controllers
         private readonly PasswordGuid _password;
         private readonly ShopDbContext _db;
 
-        public ReservationOrderNumberController(PasswordGuid password, ShopDbContext db)
+        public ReservationOrderNumberController(
+            IOptions<PasswordGuid> options, 
+            ShopDbContext db
+        )
         {
-            _password = password;
+            _password = options.Value;
             _db = db;
         }
 
