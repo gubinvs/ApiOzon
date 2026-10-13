@@ -3,8 +3,6 @@
 using ApiOzon.Entities;
 using ApiOzon.Core;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Linq;
 using Microsoft.Extensions.Options;
 
 namespace ApiOzon.Controllers
