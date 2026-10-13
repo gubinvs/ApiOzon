@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ApiOzon.Core;
+using ApiOzon.Entities;
 
 namespace ApiOzon
 {
@@ -12,13 +13,11 @@ namespace ApiOzon
         }
 
         public DbSet<GoodsTableDb> GoodsTable { get; set; } = null!;
-
         public DbSet<WarehouseDb> Warehouse { get; set; } = null!;
-
         public DbSet<SkuOzonDb> SkuOzon { get; set; } = null!;
-
         public DbSet<OzonDeliveryPointDb> OzonDeliveryPoints { get; set; } = null!;
         public DbSet<OzonDeliverySyncState> OzonDeliverySyncStates { get; set;}
+        public DbSet<OrdersFromIndividualsDb> OrdersFromIndividuals { get; set;}
 
 
 
@@ -47,6 +46,13 @@ namespace ApiOzon
             {
                 pc.HasKey(u => u.Id);
                 pc.ToTable("ozonDeliveryPoints");
+
+            });
+
+            modelBuilder.Entity<OrdersFromIndividualsDb>(pc =>
+            {
+                pc.HasKey(u => u.Id);
+                pc.ToTable("ordersFromIndividuals");
 
             });
         }
