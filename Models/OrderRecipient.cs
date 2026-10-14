@@ -8,6 +8,6 @@ namespace ApiOzon.Models
         public string PhoneNumber { get; set; } = string.Empty;
 
         [JsonPropertyName("full_name")]
-        public string FullName { get; set; } = string.Empty;
+        public string? FullName { get; set; }
     }
 }

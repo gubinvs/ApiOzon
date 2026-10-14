@@ -19,15 +19,11 @@ namespace ApiOzon.Controllers
         public async Task<IActionResult> Create(
             [FromBody] DeliveryOrderCreateRequest request)
         {
-            var client = _httpClientFactory
-                .CreateClient("OzonDeliveryClient");
+            var client = _httpClientFactory.CreateClient("OzonDeliveryClient");
 
-            var response = await client.PostAsJsonAsync(
-                "v1/order/create",
-                request);
+            var response = await client.PostAsJsonAsync("v1/order/create", request);
 
-            var result = await response.Content
-                .ReadAsStringAsync();
+            var result = await response.Content.ReadAsStringAsync();
 
             return new ContentResult
             {
