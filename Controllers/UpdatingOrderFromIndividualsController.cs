@@ -41,16 +41,31 @@ namespace ApiOzon.Controllers
             }
 
             // 3. Обновляем только нужные поля найденного объекта
-            if (data.PhoneUser != "string")
+            // Если пришел null ИЛИ строка "string" ИЛИ пустота — мы НЕ перезаписываем телефон
+            if (!(data.PhoneUser == null || data.PhoneUser == "string" || string.IsNullOrWhiteSpace(data.PhoneUser)))
             {
-               existingOrder.PhoneUser = data.PhoneUser; 
+                existingOrder.PhoneUser = data.PhoneUser; 
             }
             
-
             // Здесь можно обновить и другие поля, если они есть в data
             if (data.StatusOrder != "string")
             {
                existingOrder.StatusOrder = data.StatusOrder; 
+            }
+
+            if (data.Amount != null)
+            {
+               existingOrder.Amount = data.Amount; 
+            }
+
+            if (data.DateTime != null)
+            {
+               existingOrder.DateTime = data.DateTime; 
+            }
+
+            if (data.ProductName != null)
+            {
+               existingOrder.ProductName = data.ProductName; 
             }
             
 
