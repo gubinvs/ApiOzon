@@ -2794,11 +2794,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Владимир\\Documents\\ApiOzon\\ApiOzon.csproj",
+      "projectUniqueName": "C:\\Users\\Владимир\\Documents\\EC-MARKET\\ApiOzon\\ApiOzon.csproj",
       "projectName": "ApiOzon",
-      "projectPath": "C:\\Users\\Владимир\\Documents\\ApiOzon\\ApiOzon.csproj",
+      "projectPath": "C:\\Users\\Владимир\\Documents\\EC-MARKET\\ApiOzon\\ApiOzon.csproj",
       "packagesPath": "C:\\Users\\Владимир\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Владимир\\Documents\\ApiOzon\\obj\\",
+      "outputPath": "C:\\Users\\Владимир\\Documents\\EC-MARKET\\ApiOzon\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Владимир\\AppData\\Roaming\\NuGet\\NuGet.Config"
